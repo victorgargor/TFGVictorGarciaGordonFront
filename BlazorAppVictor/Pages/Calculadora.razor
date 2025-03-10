@@ -1,0 +1,135 @@
+﻿@page "/calculadora"
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>Calculadora</PageTitle>
+
+<h1 class="text-center">¡Calculadora!</h1>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="form-group">
+                <label for="num1">Número 1:</label>
+                <input type="text" id="num1" class="form-control" @bind="num1" />
+            </div>
+            <div class="form-group">
+                <label for="num2">Número 2:</label>
+                <input type="text" id="num2" class="form-control" @bind="num2" />
+            </div>
+            <div class="form-group">
+                <label for="numDec">Número de Decimales:</label>
+                <input type="number" id="numDec" class="form-control" @bind="numDec" />
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12 text-center">
+            <button class="btn btn-info" @onclick='() => RealizarOperacion("suma")'>Suma</button>
+            <button class="btn btn-info" @onclick='() => RealizarOperacion("resta")'>Resta</button>
+            <button class="btn btn-info" @onclick='() => RealizarOperacion("multiplicacion")'>Multiplicación</button>
+            <button class="btn btn-info" @onclick='() => RealizarOperacion("division")'>División</button>
+            <button class="btn btn-info" @onclick='() => RealizarOperacion("modulo")'>Módulo</button>
+            <button class="btn btn-info" @onclick='() => RealizarOperacion("comparacion")'>Comparar</button>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12 text-center">
+            @if (!string.IsNullOrEmpty(resultado))
+            {
+                <h4>@resultado</h4>
+            }
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string num1 = "0";  
+    private string num2 = "0";
+    private int numDec = 2;     
+    private string? resultado;
+    private string? error;
+
+    private async Task RealizarOperacion(string operacion)
+    {
+        if (string.IsNullOrWhiteSpace(num1) || string.IsNullOrWhiteSpace(num2))
+        {
+            num1 = "0";
+            num2 = "0";
+            error = "Los números no pueden estar vacíos. Se han restablecido a 0.";
+            resultado = null;  
+            return;
+        }
+
+        if (num1.Contains(',') || num2.Contains(','))
+        {
+            error = "El formato de los números no es válido, se debe usar punto (.) como separador decimal.";
+            resultado = null;
+            return;
+        }
+
+        if (!double.TryParse(num1, out double n1) || !double.TryParse(num2, out double n2))
+        {
+            error = "Los valores ingresados no son válidos. Asegúrese de ingresar números.";
+            resultado = null;
+            return;
+        }
+
+        if ((operacion == "division" || operacion == "modulo") && n2 == 0)
+        {
+            error = "No se puede dividir por 0.";
+            resultado = null;
+            return;
+        }
+
+        string url = string.Empty;
+        string ruta = operacion.ToLower();
+
+        if (ruta == "comparacion")
+        {
+            url = $"https://localhost:7123/api/calculadora/comparacion/{num1}/{num2}";
+        }
+        else
+        {
+            url = $"https://localhost:7123/api/calculadora/{ruta}/{num1}/{num2}/{numDec}";
+        }
+
+        try
+        {
+            var respuesta = await Http.GetFromJsonAsync<JsonElement>(url);
+
+            if (respuesta.TryGetProperty("resultado", out var resultadoJson))
+            {
+                resultado = $"{ruta.ToUpper()}: {resultadoJson}";
+                error = null;
+            }
+            else
+            {
+                error = $"Error al realizar la operación de {ruta}. Verifica los valores introducidos.";
+            }
+        }
+        catch (JsonException)
+        {
+            error = "Error en la respuesta del servidor. Asegúrate de que los datos son correctos.";
+        }
+        catch (Exception ex)
+        {
+            error = $"Error: {ex.Message}";
+        }
+    }
+}
+
+
+
+
+
+
+
+
+

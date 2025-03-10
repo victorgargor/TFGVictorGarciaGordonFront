@@ -1,0 +1,20 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components
+
+<PageTitle>Home</PageTitle>
+
+<h1>¡Bienvenido a mi API!</h1>
+<p>¿Qué operación deseas realizar?</p>
+
+<!-- Botón para ir a la página de la calculadora -->
+<button @onclick="IrACalculadora">Ir a la Calculadora</button>
+
+@code {
+    // Función para navegar a la página de la calculadora
+    private void IrACalculadora()
+    {
+        NavigationManager.NavigateTo("/calculadora");
+    }
+
+    [Inject] private NavigationManager NavigationManager { get; set; }
+}
