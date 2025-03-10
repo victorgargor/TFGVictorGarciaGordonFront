@@ -4,132 +4,222 @@
 
 <PageTitle>Calculadora</PageTitle>
 
-<h1 class="text-center">¡Calculadora!</h1>
+<style>
+	/* Estilos globales */
+	body {
+	font-family: 'Poppins', sans-serif;
+	background-color: #f6f8fa; 
+	color: #24292f; 
+	margin: 0; 
+	padding: 20px; 
+	}
+
+	/* Título */
+	h1 {
+	color: black; 
+	text-align: center; 
+	}
+
+	/* Contenedor principal */
+	.container {
+	max-width: 600px; 
+	margin: 0 auto; 
+	background: #ffffff; 
+	padding: 20px; 
+	border-radius: 12px; 
+	box-shadow: 0 0 10px rgba(27, 31, 35, 0.1); 
+	}
+
+	/* Estilo para los formularios e inputs */
+	.form-group {
+	margin-bottom: 15px; 
+	}
+
+	label {
+	font-weight: bold; 
+	}
+
+	.form-control {
+	width: 100%; 
+	padding: 12px; 
+	font-size: 1rem; 
+	border: 1px solid #d0d7de; 
+	border-radius: 6px; 
+	transition: border-color 0.3s, box-shadow 0.3s; 
+	}
+
+	.form-control:focus-visible {
+	border-color: #0969da; 
+	box-shadow: 0 0 8px rgba(9, 105, 218, 0.3); /* Sombra al enfocar */
+	outline: none; /* Elimina el contorno por defecto */
+	}
+
+	/* Estilo para los botones */
+	.btn-operation {
+	background-color: #0969da; 
+	color: white;
+	font-size: 1.1rem; 
+	font-weight: bold; 
+	padding: 12px 20px; 
+	border-radius: 6px; 
+	margin: 5px; 
+	cursor: pointer; /* Puntero al pasar sobre el botón */
+	transition: all 0.3s; /* Transición suave */
+	}
+
+	/* Efecto hover */
+	.btn-operation:hover {
+	background-color: #0550ae; 
+	transform: scale(1.1); /* Aumento de tamaño */
+	}
+</style>
+
+<h1>¡Calculadora!</h1>
 
 <div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="form-group">
-                <label for="num1">Número 1:</label>
-                <input type="text" id="num1" class="form-control" @bind="num1" />
-            </div>
-            <div class="form-group">
-                <label for="num2">Número 2:</label>
-                <input type="text" id="num2" class="form-control" @bind="num2" />
-            </div>
-            <div class="form-group">
-                <label for="numDec">Número de Decimales:</label>
-                <input type="number" id="numDec" class="form-control" @bind="numDec" />
-            </div>
-        </div>
-    </div>
+	<!-- Inputs -->
+	<div class="row">
+		<div class="col-12">
+			<div class="form-group">
+				<label for="num1">Número 1:</label>
+				<input type="text" id="num1" class="form-control" @bind="num1" placeholder="Ingrese el primer número" />
+			</div>
+			<div class="form-group">
+				<label for="num2">Número 2:</label>
+				<input type="text" id="num2" class="form-control" @bind="num2" placeholder="Ingrese el segundo número" />
+			</div>
+			<div class="form-group">
+				<label for="numDec">Número de Decimales:</label>
+				<input type="number" id="numDec" class="form-control" @bind="numDec" placeholder="Cantidad de decimales" />
+			</div>
+		</div>
+	</div>
 
-    <div class="row mt-3">
-        <div class="col-12 text-center">
-            <button class="btn btn-info" @onclick='() => RealizarOperacion("suma")'>Suma</button>
-            <button class="btn btn-info" @onclick='() => RealizarOperacion("resta")'>Resta</button>
-            <button class="btn btn-info" @onclick='() => RealizarOperacion("multiplicacion")'>Multiplicación</button>
-            <button class="btn btn-info" @onclick='() => RealizarOperacion("division")'>División</button>
-            <button class="btn btn-info" @onclick='() => RealizarOperacion("modulo")'>Módulo</button>
-            <button class="btn btn-info" @onclick='() => RealizarOperacion("comparacion")'>Comparar</button>
-        </div>
-    </div>
+	<!-- Botones -->
+	<div class="row mt-3">
+		<div class="col-12 text-center">
+			<button class="btn btn-operation" @onclick='() => RealizarOperacion("suma")'>Suma</button>
+			<button class="btn btn-operation" @onclick='() => RealizarOperacion("resta")'>Resta</button>
+			<button class="btn btn-operation" @onclick='() => RealizarOperacion("multiplicacion")'>Multiplicación</button>
+			<button class="btn btn-operation" @onclick='() => RealizarOperacion("division")'>División</button>
+			<button class="btn btn-operation" @onclick='() => RealizarOperacion("modulo")'>Módulo</button>
+			<button class="btn btn-operation" @onclick='() => RealizarOperacion("comparacion")'>Comparar</button>
+		</div>
+	</div>
 
-    <div class="row mt-3">
-        <div class="col-12 text-center">
-            @if (!string.IsNullOrEmpty(resultado))
-            {
-                <h4>@resultado</h4>
-            }
-            @if (!string.IsNullOrEmpty(error))
-            {
-                <div class="alert alert-danger">@error</div>
-            }
-        </div>
-    </div>
+	<!-- Salidas -->
+	<div class="row mt-3">
+		<div class="col-12 text-center">
+			<!-- Muestra el resultado si no es nulo o vacío -->
+			@if (!string.IsNullOrEmpty(resultado))
+			{
+				<div class="result-box">
+					<h4>Resultado: <span class="result-text">@resultado</span></h4>
+				</div>
+			}
+			<!-- Muestra un mensaje de error si hay -->
+			@if (!string.IsNullOrEmpty(error))
+			{
+				<div class="alert alert-danger error-box">
+					<i class="bi bi-x-circle"></i> <strong>¡Error!</strong> @error
+				</div>
+			}
+		</div>
+	</div>
 </div>
 
 @code {
-    private string num1 = "0";  
-    private string num2 = "0";
-    private int numDec = 2;     
-    private string? resultado;
-    private string? error;
+	// Por defecto los valores son 0 para los números y 2 para los decimales
+	private string num1 = "0";
+	private string num2 = "0";
+	private int numDec = 2; 
+	private string? resultado; // Variable para almacenar los resultados
+	private string? error; // Variable para almacenar los errores
 
-    private async Task RealizarOperacion(string operacion)
-    {
-        if (string.IsNullOrWhiteSpace(num1) || string.IsNullOrWhiteSpace(num2))
-        {
-            num1 = "0";
-            num2 = "0";
-            error = "Los números no pueden estar vacíos. Se han restablecido a 0.";
-            resultado = null;  
-            return;
-        }
+	/// <summary>
+	/// Método encargado de realizar la operación seleccionada por el usuario.
+	/// Valida la entrada, evita la división por cero y construye la URL para hacer la petición a la API.
+	/// </summary>
+	/// <param name="operacion">El tipo de operación que se va a realizar (suma, resta, multiplicación, etc.)</param>
+	/// <returns>Una tarea asíncrona para realizar la operación.</returns>
+	private async Task RealizarOperacion(string operacion)
+	{
+		// Limpiar cualquier resultado o error anterior
+		resultado = error = null;
 
-        if (num1.Contains(',') || num2.Contains(','))
-        {
-            error = "El formato de los números no es válido, se debe usar punto (.) como separador decimal.";
-            resultado = null;
-            return;
-        }
+		// Valido la entrada
+		if (!ValidarEntradas(out double n1, out double n2))
+			return;
 
-        if (!double.TryParse(num1, out double n1) || !double.TryParse(num2, out double n2))
-        {
-            error = "Los valores ingresados no son válidos. Asegúrese de ingresar números.";
-            resultado = null;
-            return;
-        }
+		// Comprobar que no se intente dividir por cero
+		if ((operacion == "division" || operacion == "modulo") && n2 == 0)
+		{
+			error = "No se puede dividir por 0.";  
+			return;
+		}
 
-        if ((operacion == "division" || operacion == "modulo") && n2 == 0)
-        {
-            error = "No se puede dividir por 0.";
-            resultado = null;
-            return;
-        }
+		// Construyo la URL para la API dependiendo de la operación 
+		string url = operacion == "comparacion"
+			? $"https://localhost:7123/api/calculadora/comparacion/{num1}/{num2}" // URL para comparación
+			: $"https://localhost:7123/api/calculadora/{operacion}/{num1}/{num2}/{numDec}"; // URL para operaciones matemáticas
 
-        string url = string.Empty;
-        string ruta = operacion.ToLower();
+		// Obtengo el resultado
+		await ObtenerResultado(url);
+	}
 
-        if (ruta == "comparacion")
-        {
-            url = $"https://localhost:7123/api/calculadora/comparacion/{num1}/{num2}";
-        }
-        else
-        {
-            url = $"https://localhost:7123/api/calculadora/{ruta}/{num1}/{num2}/{numDec}";
-        }
+	/// <summary>
+	/// Valida la entrada de los números, asegurando que sean válidos y que estén en el formato correcto.
+	/// </summary>
+	/// <param name="n1">El primer número a validar.</param>
+	/// <param name="n2">El segundo número a validar.</param>
+	/// <returns>Devuelve true si las entradas son válidas, false en caso contrario.</returns>
+	private bool ValidarEntradas(out double n1, out double n2)
+	{
+		n1 = n2 = 0;
 
-        try
-        {
-            var respuesta = await Http.GetFromJsonAsync<JsonElement>(url);
+		// Comprobar que los números no estén vacíos
+		if (string.IsNullOrWhiteSpace(num1) || string.IsNullOrWhiteSpace(num2))
+		{
+			error = "Ingrese ambos números."; // Si falta algún número
+			return false;
+		}
 
-            if (respuesta.TryGetProperty("resultado", out var resultadoJson))
-            {
-                resultado = $"{ruta.ToUpper()}: {resultadoJson}";
-                error = null;
-            }
-            else
-            {
-                error = $"Error al realizar la operación de {ruta}. Verifica los valores introducidos.";
-            }
-        }
-        catch (JsonException)
-        {
-            error = "Error en la respuesta del servidor. Asegúrate de que los datos son correctos.";
-        }
-        catch (Exception ex)
-        {
-            error = $"Error: {ex.Message}";
-        }
-    }
+		// Solo permito el punto (.) como separador decimal
+		if (num1.Contains(',') || num2.Contains(','))
+		{
+			error = "Use punto (.) como separador decimal."; 
+			return false;
+		}
+
+		// Si los datos proporcionados no son números válidos
+		if (!double.TryParse(num1, out n1) || !double.TryParse(num2, out n2))
+		{
+			error = "Valores inválidos, ingrese solo números.";  
+			return false;
+		}
+
+		return true; // Si todo es correcto, se devuelve true
+	}
+
+	/// <summary>
+	/// Realiza una petición a la API para obtener el resultado de la operación.
+	/// </summary>
+	/// <param name="url">La URL de la API para la operación deseada.</param>
+	/// <returns>Una tarea asíncrona que obtiene el resultado.</returns>
+	private async Task ObtenerResultado(string url)
+	{
+		try
+		{
+			// Hacer la solicitud GET a la API
+			var respuesta = await Http.GetFromJsonAsync<JsonElement>(url);
+
+			// Obtener el resultado de la respuesta JSON
+			resultado = respuesta.TryGetProperty("resultado", out var resJson) ? resJson.ToString() : "Error en la operación.";
+		}
+		catch (Exception ex)
+		{
+			// Si hay un error, se captura y se muestra el mensaje de error
+			error = $"Error: {ex.Message}";
+		}
+	}
 }
-
-
-
-
-
-
-
-
-
