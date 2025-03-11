@@ -1,0 +1,215 @@
+﻿@page "/fecha"
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>Operaciones con Fechas</PageTitle>
+
+<style>
+    /* Estilos globales */
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f6f8fa;
+        color: #24292f;
+        margin: 0;
+        padding: 20px;
+        overflow: hidden;
+    }
+
+    /* Título */
+    h1 {
+        color: black;
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 30px;
+    }
+
+    /* Contenedor principal */
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+    }
+
+    /* Contenedor para los botones */
+    .row {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    /* Estilo para los botones */
+    .btn-operation {
+        width: 45%;
+        background-color: #0969da;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding: 12px 20px;
+        border: solid 1px black;
+        border-radius: 6px;
+        margin: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    /* Efecto hover */
+    .btn-operation:hover {
+        background-color: #0550ae;
+        color: white;
+        transform: scale(1.1); /* Aumento de tamaño */
+    }
+
+    /* Textarea */
+    textarea {
+        width: 100%;
+        min-height: 150px;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        resize: vertical;
+    }
+
+    /* Input for concatenation times */
+    input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }
+
+    .error {
+        color: red;
+        font-size: 1rem;
+    }
+</style>
+
+<h1>Operaciones con Fechas</h1>
+
+<div class="container">
+    <!-- Entrada para la primera fecha -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <input @bind="fecha1" type="text" placeholder="Ingrese la primera fecha (yyyy/MM/dd)" class="form-control mb-3" />
+        </div>
+    </div>
+
+    <!-- Entrada para la segunda fecha -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <input @bind="fecha2" type="text" placeholder="Ingrese la segunda fecha (yyyy/MM/dd)" class="form-control mb-3" />
+        </div>
+    </div>
+
+    <!-- Botones de operaciones -->
+    <div class="row">
+        <button class="btn-operation" @onclick='() => RealizarOperacion("diferencia")'>Calcular Diferencia</button>
+        <button class="btn-operation" @onclick='() => RealizarOperacion("inicio-fin")'>Inicio y Fin del Año</button>
+        <button class="btn-operation" @onclick='() => RealizarOperacion("dias")'>Mostrar Días del Año</button>
+        <button class="btn-operation" @onclick='() => RealizarOperacion("semana")'>Mostrar Semana del Año</button>
+    </div>
+
+    <!-- Salida -->
+    <div class="form-group">
+        <label for="resultText">Resultado:</label>
+        <textarea id="resultText" readonly @bind="resultado"></textarea>
+    </div>
+
+    <!-- Mensaje de error -->
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="row">
+            <div class="col-12 text-center">
+                <p class="error">@error</p>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Variables para almacenar las fechas ingresadas por el usuario
+    private string fecha1;
+    private string fecha2;
+
+    // Variables para almacenar los resultados y los errores
+    private string? resultado;
+    private string? error;
+
+    /// <summary>
+    /// Método general para realizar la operación seleccionada con las fechas ingresadas.
+    /// </summary>
+    /// <param name="operacion">La operación a realizar (diferencia, inicio-fin, dias, semana).</param>
+    /// <returns>Tarea asincrónica.</returns>
+    private async Task RealizarOperacion(string operacion)
+    {
+        // Validación de fechas
+        if (string.IsNullOrWhiteSpace(fecha1) || string.IsNullOrWhiteSpace(fecha2))
+        {
+            error = "Por favor, ingrese ambas fechas.";
+            resultado = null;
+            return;
+        }
+
+        // Limpiar cualquier error previo
+        error = null;
+
+        // Crear el objeto para enviar en la solicitud (FechasRequest)
+        var fechasRequest = new
+        {
+            Fecha1 = fecha1,
+            Fecha2 = fecha2
+        };
+
+        // Construyo la URL para la API dependiendo de la operación
+        string url = $"https://localhost:7123/api/fecha/{operacion}";
+
+        // Realizo la solicitud POST a la API para la operación seleccionada
+        try
+        {
+            var response = await Http.PostAsJsonAsync(url, fechasRequest);
+
+            // Si la respuesta es exitosa, se procesa el resultado
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadFromJsonAsync<JsonElement>();
+                resultado = ObtenerResultado(data, operacion);
+            }
+            else
+            {
+                error = "Error el formato admitido es yyyy/MM/dd o la fecha seleccionada no está admitida";
+                resultado = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            // En caso de error
+            error = $"Ocurrió un error: {ex.Message}";
+            resultado = null;
+        }
+    }
+
+    /// <summary>
+    /// Método para obtener el resultado basado en la operación seleccionada.
+    /// </summary>
+    /// <param name="data">Datos JSON obtenidos de la respuesta de la API.</param>
+    /// <param name="operacion">La operación realizada (diferencia, inicio-fin, dias, semana).</param>
+    /// <returns>El resultado en formato de cadena.</returns>
+    private string ObtenerResultado(JsonElement data, string operacion)
+    {
+        return operacion switch
+        {
+            "diferencia" => $"Diferencia: {data.GetProperty("diferencia").GetString()}",
+            "inicio-fin" => $"Primera fecha: {data.GetProperty("primeraFecha").GetString()}{Environment.NewLine}Segunda fecha: {data.GetProperty("segundaFecha").GetString()}",
+            "dias" => $"Primera fecha: {data.GetProperty("primeraFecha").GetString()}{Environment.NewLine}Segunda fecha: {data.GetProperty("segundaFecha").GetString()}",
+            "semana" => $"Primera fecha: {data.GetProperty("primeraFecha").GetString()}{Environment.NewLine}Segunda fecha: {data.GetProperty("segundaFecha").GetString()}",
+            _ => "Operación desconocida"
+        };
+    }
+}

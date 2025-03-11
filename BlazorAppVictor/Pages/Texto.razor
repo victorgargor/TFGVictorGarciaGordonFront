@@ -1,0 +1,231 @@
+﻿@page "/texto"
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>Operaciones con Texto</PageTitle>
+
+<style>
+	/* Estilos globales */
+	body {
+		font-family: 'Poppins', sans-serif;
+		background-color: #f6f8fa;
+		color: #24292f;
+		margin: 0;
+		padding: 20px;
+		overflow: hidden;
+	}
+
+	/* Título */
+	h1 {
+		color: black;
+		text-align: center;
+		font-size: 2.5rem;
+		font-weight: bold;
+		margin-bottom: 30px;
+	}
+
+	/* Contenedor principal */
+	.container {
+		max-width: 600px;
+		margin: 0 auto;
+		padding: 20px;
+		border-radius: 12px;
+		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+	}
+
+	/* Contenedor para los botones */
+	.row {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	/* Estilo para los botones */
+	.btn-operation {
+		width: 45%;
+		background-color: #0969da;
+		color: white;
+		font-size: 1.1rem;
+		font-weight: bold;
+		padding: 12px 20px;
+		border: solid 1px black;
+		border-radius: 6px;
+		margin: 5px;
+		cursor: pointer;
+		transition: all 0.3s;
+	}
+
+		/* Efecto hover */
+		.btn-operation:hover {
+			background-color: #0550ae;
+			color: white;
+			transform: scale(1.1); /* Aumento de tamaño */
+		}
+
+	/* Textarea */
+	textarea {
+		width: 100%;
+		padding: 12px;
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		margin-bottom: 15px;
+		font-size: 1.1rem;
+		resize: vertical;
+	}
+
+	/* Input for concatenation times */
+	input[type="number"] {
+		width: 100%;
+		padding: 12px;
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		margin-bottom: 15px;
+		font-size: 1.1rem;
+	}
+
+	.error {
+		color: red;
+		font-size: 1rem;
+	}
+</style>
+
+<h1>Operaciones con Texto</h1>
+
+<div class="container">
+	<!-- Inputs -->
+	<div class="form-group">
+		<label for="inputText">Texto de Entrada:</label>
+		<textarea id="inputText" @bind="inputText" placeholder="Escribe tu texto aquí..."></textarea>
+	</div>
+
+	<div class="form-group">
+		<label for="inputTimes">Número de veces para concatenar:</label>
+		<input type="number" id="inputTimes" @bind="veces" min="1" max="100000" />
+		@if (!isValidTimes)
+		{
+			<p class="error">El número de veces debe ser mayor a 0 y menor o igual a 100000.</p>
+		}
+	</div>
+
+	<!-- Botones -->
+	<div class="row">
+		<button class="btn-operation" @onclick='() => RealizarOperacion("contar")'>Contar Caracteres</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("mayusculas")'>Pasar a Mayúsculas</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("minusculas")'>Pasar a Minúsculas</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("repetidas")'>Palabras Repetidas</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("reemplazar")'>Reemplazar Palabras</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("concatenar")'>Concatenar Texto</button>
+	</div>
+
+	<!-- Salida -->
+	<div class="form-group">
+		<label for="resultText">Resultado:</label>
+		<textarea id="resultText" readonly>@resultado</textarea>
+	</div>
+</div>
+
+@code {
+	private string inputText = ""; // Este será el texto ingresado por el usuario
+	private string resultado = "";  // Este será el resultado de la operación
+	private int veces = 1; // El número de veces que se va a concatenar
+	private bool isValidTimes = true; // Valida si el número de veces es correcto
+
+	/// <summary>
+	/// Realiza la operación seleccionada.
+	/// Si no hay texto de entrada, usa un valor por defecto.
+	/// </summary>
+	/// <param name="operacion">El tipo de operación a realizar</param>
+	private async Task RealizarOperacion(string operacion)
+	{
+		// Si no hay texto ingresado, usar el texto por defecto
+		if (string.IsNullOrWhiteSpace(inputText))
+		{
+			inputText = "Proconsi es una empresa de Tecnologías de la Información y la Comunicación especializada en el desarrollo e integración de soluciones informáticas para todo tipo de empresas. Más de tres décadas de experiencia avalan a una compañía tan flexible como responsable. Cuenta con un equipo multidisciplinar de más de 120 profesionales cualificados, expertos y comprometidos con un único objetivo: hallar la solución tecnológica exacta para cada cliente. Proconsi es especialista en la creación y el desarrollo de software de gestión, consultoría tecnológica, dirección y gestión de proyectos I+D+i basados en TIC, soporte técnico, aplicaciones móviles y fomento de tendencias en nuevas tecnologías, como el cloud computing."; // Texto por defecto
+		}
+
+		// Validar la concatenación solo si la operación es "concatenar"
+		if (operacion == "concatenar" && (veces <= 0 || veces > 100000))
+		{
+			isValidTimes = false;
+			return;  // Si no es válido, no hacemos nada
+		}
+		isValidTimes = true;
+
+		// Construyo la URL para la API dependiendo de la operación
+		string url = $"https://localhost:7123/api/texto/{operacion}";
+
+		// Realizo la solicitud POST a la API dependiendo de la operación
+		switch (operacion)
+		{
+			case "concatenar":
+				var concatenarRequest = new { Texto = inputText, Veces = veces };
+				await PostOperacion(url, concatenarRequest);
+				break;
+
+			default:
+				await PostOperacion(url, inputText);
+				break;
+		}
+	}
+
+	/// <summary>
+	/// Realiza la solicitud POST a la API y obtiene el resultado de la operación.
+	/// </summary>
+	/// <param name="url">La URL de la API para la operación deseada.</param>
+	/// <param name="data">El texto a enviar en el cuerpo de la solicitud.</param>
+	private async Task PostOperacion(string url, object data)
+	{
+		try
+		{
+			// Hacer la solicitud POST a la API
+			var response = await Http.PostAsJsonAsync(url, data);
+
+			// Verificar si la solicitud fue exitosa
+			if (response.IsSuccessStatusCode)
+			{
+				// Obtener el resultado de la respuesta
+				var respuestaJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+				// Dependiendo de la operación, obtener el valor correspondiente
+				if (respuestaJson.TryGetProperty("tiempoConcatenacion", out var tiempoConcatenacion) &&
+					respuestaJson.TryGetProperty("longitudTexto", out var longitudTexto))
+				{
+					resultado = $"Tiempo de concatenación: {tiempoConcatenacion}, Longitud del texto concatenado: {longitudTexto}";
+				}
+				else if (respuestaJson.TryGetProperty("caracteres", out var caracteres))
+				{
+					resultado = $"Cantidad de caracteres: {caracteres}";
+				}
+				else if (respuestaJson.TryGetProperty("textoConvertido", out var textoConvertido))
+				{
+					resultado = $"{textoConvertido}";
+				}
+				else if (respuestaJson.TryGetProperty("palabrasRepetidas", out var palabrasRepetidas))
+				{
+					resultado = $"Palabras repetidas: {palabrasRepetidas}";
+				}
+				else if (respuestaJson.TryGetProperty("textoReemplazado", out var textoReemplazado))
+				{
+					resultado = $"Texto reemplazado: {textoReemplazado}";
+				}
+				else
+				{
+					resultado = "Error al procesar la operación.";
+				}
+			}
+			// En caso de error de la solicitud
+			else
+			{
+				resultado = "Error en la solicitud a la API.";
+			}
+		}
+		catch (Exception ex)
+		{
+			resultado = $"Error: {ex.Message}";
+		}
+	}
+}
+
+
+

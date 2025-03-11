@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Layout\Component.razor" />
     <Content Remove="Pages\Component.razor" />
+    <Content Remove="Pages\Separador.razor" />
   </ItemGroup>
 
   <ItemGroup>

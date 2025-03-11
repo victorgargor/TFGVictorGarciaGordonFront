@@ -7,70 +7,72 @@
 <style>
 	/* Estilos globales */
 	body {
-	font-family: 'Poppins', sans-serif;
-	background-color: #f6f8fa; 
-	color: #24292f; 
-	margin: 0; 
-	padding: 20px; 
+		font-family: 'Poppins', sans-serif;
+		background-color: #f6f8fa;
+		color: #24292f;
+		margin: 0;
+		padding: 20px;
+		overflow: hidden;
 	}
 
 	/* Título */
 	h1 {
-	color: black; 
-	text-align: center; 
+		color: black;
+		text-align: center;
+		font-size: 2.5rem; /* Aumentamos el tamaño del h1 */
+		font-weight: bold;
+		margin-bottom: 30px; /* Añadimos separación entre el título y el formulario */
+	}
+
+	/* Estilo para el párrafo destacado */
+	.highlighted-text {
+		font-weight: 300;
+		font-size: 1.1rem;
+		color: #555;
+		text-align: center;
+		margin-bottom: 20px;
 	}
 
 	/* Contenedor principal */
 	.container {
-	max-width: 600px; 
-	margin: 0 auto; 
-	background: #ffffff; 
-	padding: 20px; 
-	border-radius: 12px; 
-	box-shadow: 0 0 10px rgba(27, 31, 35, 0.1); 
-	}
-
-	/* Estilo para los formularios e inputs */
-	.form-group {
-	margin-bottom: 15px; 
-	}
-
-	label {
-	font-weight: bold; 
-	}
-
-	.form-control {
-	width: 100%; 
-	padding: 12px; 
-	font-size: 1rem; 
-	border: 1px solid #d0d7de; 
-	border-radius: 6px; 
-	transition: border-color 0.3s, box-shadow 0.3s; 
-	}
-
-	.form-control:focus-visible {
-	border-color: #0969da; 
-	box-shadow: 0 0 8px rgba(9, 105, 218, 0.3); /* Sombra al enfocar */
-	outline: none; /* Elimina el contorno por defecto */
+		max-width: 600px;
+		margin: 0 auto;
+		padding: 20px;
+		border-radius: 12px;
+		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1); /* Sombra para destacarlo */
 	}
 
 	/* Estilo para los botones */
 	.btn-operation {
-	background-color: #0969da; 
-	color: white;
-	font-size: 1.1rem; 
-	font-weight: bold; 
-	padding: 12px 20px; 
-	border-radius: 6px; 
-	margin: 5px; 
-	cursor: pointer; /* Puntero al pasar sobre el botón */
-	transition: all 0.3s; /* Transición suave */
+		background-color: #0969da;
+		color: white;
+		font-size: 1.1rem;
+		font-weight: bold;
+		padding: 12px 20px;
+		border: solid 1px black;
+		border-radius: 6px;
+		margin: 5px;
+		cursor: pointer;
+		transition: all 0.3s;
 	}
 
-	/* Efecto hover */
-	.btn-operation:hover {
-	background-color: #0550ae; 
-	transform: scale(1.1); /* Aumento de tamaño */
+		/* Efecto hover */
+		.btn-operation:hover {
+			background-color: #0550ae;
+			color: white;
+			transform: scale(1.1); /* Aumento de tamaño */
+		}
+
+	/* Asegura que los botones estén uno debajo del otro */
+	.row {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 20px;
+		flex-wrap: wrap; /* Por si no caben en una sola línea */
+	}
+
+	.mb-3 {
+		margin-bottom: 15px; /* Añade espacio entre los botones */
 	}
 </style>
 
@@ -132,7 +134,7 @@
 	// Por defecto los valores son 0 para los números y 2 para los decimales
 	private string num1 = "0";
 	private string num2 = "0";
-	private int numDec = 2; 
+	private int numDec = 2;
 	private string? resultado; // Variable para almacenar los resultados
 	private string? error; // Variable para almacenar los errores
 
@@ -154,11 +156,11 @@
 		// Comprobar que no se intente dividir por cero
 		if ((operacion == "division" || operacion == "modulo") && n2 == 0)
 		{
-			error = "No se puede dividir por 0.";  
+			error = "No se puede dividir por 0.";
 			return;
 		}
 
-		// Construyo la URL para la API dependiendo de la operación 
+		// Construyo la URL para la API dependiendo de la operación
 		string url = operacion == "comparacion"
 			? $"https://localhost:7123/api/calculadora/comparacion/{num1}/{num2}" // URL para comparación
 			: $"https://localhost:7123/api/calculadora/{operacion}/{num1}/{num2}/{numDec}"; // URL para operaciones matemáticas
@@ -187,14 +189,14 @@
 		// Solo permito el punto (.) como separador decimal
 		if (num1.Contains(',') || num2.Contains(','))
 		{
-			error = "Use punto (.) como separador decimal."; 
+			error = "Use punto (.) como separador decimal.";
 			return false;
 		}
 
 		// Si los datos proporcionados no son números válidos
 		if (!double.TryParse(num1, out n1) || !double.TryParse(num2, out n2))
 		{
-			error = "Valores inválidos, ingrese solo números.";  
+			error = "Valores inválidos, ingrese solo números.";
 			return false;
 		}
 
