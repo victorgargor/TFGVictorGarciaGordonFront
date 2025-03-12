@@ -1,5 +1,198 @@
-﻿<h3>ItemSeparator</h3>
+﻿@page "/itemseparator"
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>Item Separator</PageTitle>
+
+<style>
+    /* Estilos globales */
+    body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f6f8fa;
+    color: #24292f;
+    margin: 0;
+    padding: 20px;
+    overflow: hidden;
+    }
+
+    /* Título */
+    h3 {
+    color: black;
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 30px;
+    }
+
+    /* Contenedor principal */
+    .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+    }
+
+    /* Contenedor para los botones */
+    .row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    }
+
+    /* Estilo para los botones */
+    .btn-operation {
+    width: 45%;
+    background-color: #0969da;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 12px 20px;
+    border: solid 1px black;
+    border-radius: 6px;
+    margin: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    }
+
+    /* Efecto hover */
+    .btn-operation:hover {
+    background-color: #0550ae;
+    color: white;
+    transform: scale(1.1); /* Aumento de tamaño */
+    }
+
+    /* Textarea */
+    textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    resize: vertical;
+    }
+
+    /* Mensajes de error */
+    .error {
+    color: red;
+    font-size: 1rem;
+    }
+</style>
+
+<h3>ItemSeparator</h3>
+
+<div class="container">
+    <!-- Inputs -->
+    <div class="form-group">
+        <label for="inputItemText">Cadena de Entrada:</label>
+        <textarea id="inputItemText" @bind="inputText" placeholder="(ej: NombreItem$$##Precio$$##Cantidad)"></textarea>
+    </div>
+
+    <!-- Botones -->
+    <div class="row">
+        <button class="btn-operation" @onclick="ProcesarCadena">Procesar Cadena</button>
+    </div>
+
+    <!-- Salida -->
+    <div class="form-group">
+        <label for="resultText">Resultado:</label>
+        <textarea id="resultText" readonly>@resultado</textarea>
+    </div>
+
+    <!--Errores -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p class="error">@errorMessage</p>
+    }
+</div>
 
 @code {
+    private string inputText = "Bread$$##12.5$$##10";  // Texto ingresado por el usuario, con un valor por defecto
+    private string resultado = "";  // Resultado de la operación
+    private string errorMessage = "";  // Mensaje de error
 
+    /// <summary>
+    /// Procesa la cadena proporcionada por el usuario.
+    /// </summary>
+    private async Task ProcesarCadena()
+    {
+        try
+        {
+            // Valido la cadena de entrada
+            if (string.IsNullOrWhiteSpace(inputText)) throw new InvalidOperationException("Por favor, ingresa una cadena válida.");
+
+            // Verifico que la cadena esté en el formato correcto
+            var partes = inputText.Split("$$##");
+            if (partes.Length != 3) throw new FormatException("Formato inválido. La cadena debe ser 'NombreItem$$##Precio$$##Cantidad'.");
+
+            // Valido que el nombre no esté vacío
+            if (string.IsNullOrWhiteSpace(partes[0].Trim())) throw new InvalidOperationException("El nombre del item no puede estar vacío.");
+
+            // Valido que el precio esté en el formato correcto (con punto)
+            if (!double.TryParse(partes[1].Trim(), out var precio) || partes[1].Trim().Contains(","))
+                throw new FormatException("El separador decimal debe ser un punto (.).");
+
+            // Valido que la cantidad sea un número entero
+            if (!int.TryParse(partes[2].Trim(), out _)) throw new FormatException("La cantidad debe ser un número entero válido.");
+
+            // Restablezco el mensaje de error
+            errorMessage = "";
+
+            // Llamar al método para hacer la solicitud a la API
+            var request = new { CadenaEntrada = inputText };
+            await RealizarOperacionApi("https://localhost:7123/api/itemseparator", request);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;  // Muestro el mensaje de error generado
+            resultado = ""; // Limpio el resultado ya que ocurrió un error.
+        }
+    }
+
+    /// <summary>
+    /// Este método realiza una solicitud a la API con los datos proporcionados y procesa la respuesta.
+    /// </summary>
+    /// <param name="url">La URL a la cual se enviará la solicitud POST.</param>
+    /// <param name="requestData">El objeto que contiene los datos que se enviarán a la API.</param>
+    /// <returns>Un Task que representa la operación asíncrona de realizar la solicitud.</returns>
+    private async Task RealizarOperacionApi(string url, object requestData)
+    {
+        try
+        {
+            // Enviar solicitud a la API con los datos proporcionados.
+            var response = await Http.PostAsJsonAsync(url, requestData);
+
+            // Si hay errores.
+            if (!response.IsSuccessStatusCode)
+                throw new Exception("Error al procesar la solicitud. Intente de nuevo.");
+
+            // Si no hay errores, leer el contenido de la respuesta como un objeto JSON.
+            var respuestaJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+            // Verifico si la respuesta contiene las propiedades: itemName, itemPrice y itemQuantity.
+            if (respuestaJson.TryGetProperty("itemName", out var itemName) &&
+                respuestaJson.TryGetProperty("itemPrice", out var itemPrice) &&
+                respuestaJson.TryGetProperty("itemQuantity", out var itemQuantity))
+            {
+                // Si las propiedades están presentes, formateo el resultado con los valores recibidos.
+                resultado = $"Nombre: {itemName}\nPrecio: {itemPrice}\nCantidad: {itemQuantity}";
+            }
+            else
+            {
+                // Si no se encuentran las propiedades esperadas, lanzar una excepción con un mensaje de error.
+                throw new Exception("No se pudieron procesar los datos correctamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Control de excepciones
+            errorMessage = ex.Message;  // Muestro el mensaje de error generado
+            resultado = "";  // Limpio el resultado ya que ocurrió un error.
+        }
+    }
 }
+
+

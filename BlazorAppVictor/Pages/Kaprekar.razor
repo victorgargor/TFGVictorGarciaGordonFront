@@ -1,0 +1,158 @@
+﻿@page "/kaprekar"
+@using System.Text.Json
+@inject HttpClient Http
+
+<PageTitle>Kaprekar</PageTitle>
+
+<style>
+	/* Estilos globales */
+	body {
+		font-family: 'Poppins', sans-serif;
+		background-color: #f6f8fa;
+		color: #24292f;
+		margin: 0;
+		padding: 20px;
+		overflow: hidden;
+	}
+
+	/* Título */
+	h3 {
+		color: black;
+		text-align: center;
+		font-size: 2.5rem;
+		font-weight: bold;
+		margin-bottom: 30px;
+	}
+
+	/* Contenedor principal */
+	.container {
+		max-width: 600px;
+		margin: 0 auto;
+		padding: 20px;
+		border-radius: 12px;
+		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+	}
+
+	/* Contenedor para los botones */
+	.row {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	/* Estilo para los botones */
+	.btn-operation {
+		width: 45%;
+		background-color: #0969da;
+		color: white;
+		font-size: 1.1rem;
+		font-weight: bold;
+		padding: 12px 20px;
+		border: solid 1px black;
+		border-radius: 6px;
+		margin: 5px;
+		cursor: pointer;
+		transition: all 0.3s;
+	}
+		/* Efecto hover */
+		.btn-operation:hover {
+			background-color: #0550ae;
+			color: white;
+			transform: scale(1.1); /* Aumento de tamaño */
+		}
+
+	/* Textarea */
+	textarea {
+		width: 100%;
+		padding: 12px;
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		margin-bottom: 15px;
+		font-size: 1.1rem;
+		resize: vertical;
+	}
+
+	/* Input for concatenation times */
+	input[type="number"] {
+		width: 100%;
+		padding: 12px;
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		margin-bottom: 15px;
+		font-size: 1.1rem;
+	}
+
+	.error {
+		color: red;
+		font-size: 1rem;
+	}
+</style>
+
+<h3>Kaprekar</h3>
+
+<div class="container">
+	<div class="row">
+		<input type="number" @bind="numero" placeholder="Introduce un número" />
+		<button class="btn-operation" @onclick="VerificarKaprekar">Verificar</button>
+	</div>
+	@if (!string.IsNullOrEmpty(mensajeError))
+	{
+		<div class="row">
+			<p class="error">@mensajeError</p>
+		</div>
+	}
+
+	@if (esKaprekar != null)
+	{
+		<div class="row">
+			<p>Número: @numeroKaprekar</p>
+			<p>¿Es Kaprekar?: @(esKaprekar == true ? "Sí" : "No")</p>
+			<p>Número de operaciones: @operacionesKaprekar</p>
+		</div>
+	}
+</div>
+
+@code {
+	private int numero;
+	private int? numeroKaprekar;
+	private bool? esKaprekar;
+	private int? operacionesKaprekar;
+	private string? mensajeError;
+
+	private async Task VerificarKaprekar()
+	{
+		try
+		{
+			// Llamada a la API para verificar el número Kaprekar.
+			var response = await Http.GetAsync($"https://localhost:7123/api/kaprekar/{numero}");
+			response.EnsureSuccessStatusCode();
+
+			var jsonResponse = await response.Content.ReadAsStringAsync();
+			var kaprekar = JsonSerializer.Deserialize<KaprekarResponse>(jsonResponse);
+
+			if (kaprekar != null)
+			{
+				numeroKaprekar = kaprekar.Numero;
+				esKaprekar = kaprekar.EsKaprekar;
+				operacionesKaprekar = kaprekar.Operaciones;
+				mensajeError = string.Empty; // Limpio mensaje de error si lo hubiera.
+			}
+		}
+		catch (Exception ex)
+		{
+			mensajeError = "Ocurrió un error al verificar el número Kaprekar: " + ex.Message;
+			numeroKaprekar = null;
+			esKaprekar = null;
+			operacionesKaprekar = null; // Limpio resultado si hay un error.
+		}
+	}
+
+	public class KaprekarResponse
+	{
+		public int Numero { get; set; }
+		public bool EsKaprekar { get; set; }
+		public int Operaciones { get; set; }
+	}
+
+}

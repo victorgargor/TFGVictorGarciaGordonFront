@@ -4,115 +4,141 @@
 <PageTitle>Home</PageTitle>
 
 <style>
-	/* Estilos globales */
-	body {
-		font-family: 'Poppins', sans-serif;
-		background-color: #f6f8fa;
-		color: #24292f;
-		margin: 0;
-		padding: 20px;
-		overflow: hidden;
-	}
+    /* Estilos globales */
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f6f8fa;
+        color: #24292f;
+        margin: 0;
+        padding: 20px;
+        overflow: hidden;
+    }
 
-	/* Título */
-	h1 {
-		color: black;
-		text-align: center;
-		font-size: 2.5rem;
-		font-weight: bold;
-		margin-bottom: 30px;
-	}
+    /* Título */
+    h1 {
+        color: black;
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 30px;
+    }
 
-	/* Estilo p */
-	.highlighted-text {
-		font-weight: 300;
-		font-size: 1.1rem;
-		color: #555;
-		text-align: center;
-		margin-bottom: 20px;
-	}
+    /* Estilo p */
+    .highlighted-text {
+        font-weight: 300;
+        font-size: 1.1rem;
+        color: #555;
+        text-align: center;
+        margin-bottom: 20px;
+    }
 
-	/* Contenedor principal */
-	.container {
-		max-width: 600px;
-		margin: 0 auto;
-		padding: 20px;
-		border-radius: 12px;
-		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
-	}
+    /* Contenedor principal */
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+    }
 
-	/* Estilo para los botones */
-	.btn-operation {
-		background-color: #0969da;
-		color: white;
-		font-size: 1.1rem;
-		font-weight: bold;
-		padding: 12px 20px;
-		border: solid 1px black;
-		border-radius: 6px;
-		margin: 5px;
-		cursor: pointer;
-		transition: all 0.3s;
-	}
+    /* Estilo para los botones */
+    .btn-operation {
+        background-color: #0969da;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding: 12px 20px;
+        border: solid 1px black;
+        border-radius: 6px;
+        margin: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
 
-		/* Efecto hover */
-		.btn-operation:hover {
-			background-color: #0550ae;
-			color: white;
-			transform: scale(1.1); /* Aumento de tamaño */
-		}
+        /* Efecto hover */
+        .btn-operation:hover {
+            background-color: #0550ae;
+            color: white;
+            transform: scale(1.1); /* Aumento de tamaño */
+        }
 
-	/* Para que los botones estén uno debajo del otro */
-	.row {
-		margin-top: 20px;
-	}
+    /* Para que los botones estén uno debajo del otro */
+    .row {
+        margin-top: 20px;
+    }
 
-	.mb-3 {
-		margin-bottom: 15px; /* Espacio entre los botones */
-	}
+    .mb-3 {
+        margin-bottom: 15px; /* Espacio entre los botones */
+    }
 </style>
 
 <h1>¡Bienvenido a mi API!</h1>
 <p class="highlighted-text">¿Qué operación deseas realizar?</p>
 
 <div class="container">
-	<div class="row">
-		<div class="col-12 text-center">
-			<button class="btn btn-operation mb-3" @onclick="IrACalculadora">Ir a la Calculadora</button>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col-12 text-center">
-			<button class="btn btn-operation mb-3" @onclick="IrATexto">Operaciones con Texto</button>
-		</div>
-	</div>
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrACalculadora">Ir a la Calculadora</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrATexto">Operaciones con Texto</button>
+        </div>
+    </div>
 
-	<!-- Botón para navegar a la página de operaciones con fechas -->
-	<div class="row">
-		<div class="col-12 text-center">
-			<button class="btn btn-operation mb-3" @onclick="IrAFecha">Operaciones con Fechas</button>
-		</div>
-	</div>
+    <!-- Botón para navegar a la página de operaciones con fechas -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrAFecha">Fechas</button>
+        </div>
+    </div>
+
+    <!-- Nuevo botón para navegar a la página de ItemSeparator -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrAItemSeparator">ItemSeparator</button>
+        </div>
+    </div>
+
+    <!-- Botón para navegar a la página de Kaprekar -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrAKaprekar">Kaprekar</button>
+        </div>
+    </div>
 </div>
 
 @code {
-	// Función para navegar a la página de la calculadora
-	private void IrACalculadora()
-	{
-		NavigationManager.NavigateTo("/calculadora");
-	}
+    // Función para navegar a la página de la calculadora
+    private void IrACalculadora()
+    {
+        NavigationManager.NavigateTo("/calculadora");
+    }
 
-	// Función para navegar a la página de Operaciones con texto
-	private void IrATexto()
-	{
-		NavigationManager.NavigateTo("/texto");
-	}
+    // Función para navegar a la página de Operaciones con texto
+    private void IrATexto()
+    {
+        NavigationManager.NavigateTo("/texto");
+    }
 
-	// Función para navegar a la página de Operaciones con fechas
-	private void IrAFecha()
-	{
-		NavigationManager.NavigateTo("/fecha");
-	}
+    // Función para navegar a la página de Operaciones con fechas
+    private void IrAFecha()
+    {
+        NavigationManager.NavigateTo("/fecha");
+    }
 
-	[Inject] private NavigationManager NavigationManager { get; set; }
+    // Función para navegar a la página de ItemSeparator
+    private void IrAItemSeparator()
+    {
+        NavigationManager.NavigateTo("/itemseparator");
+    }
+
+    // Función para navegar a la página de Operación de Kaprekar
+    private void IrAKaprekar()
+    {
+        NavigationManager.NavigateTo("/kaprekar");
+    }
+
+    [Inject] private NavigationManager NavigationManager { get; set; }
 }
