@@ -1,8 +1,8 @@
-﻿@page "/kaprekar"
-@using System.Text.Json
-@inject HttpClient Http
+﻿@page "/kaprekar"  
+@using System.Text.Json  
+@inject HttpClient Http 
 
-<PageTitle>Kaprekar</PageTitle>
+<PageTitle>Kaprekar</PageTitle>  
 
 <style>
 	/* Estilos globales */
@@ -31,6 +31,7 @@
 		padding: 20px;
 		border-radius: 12px;
 		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+		background: white;
 	}
 
 	/* Contenedor para los botones */
@@ -39,9 +40,20 @@
 		justify-content: center;
 		flex-wrap: wrap;
 		gap: 10px;
+		margin-bottom: 15px; 
 	}
 
-	/* Estilo para los botones */
+	/* Input de texto */
+	input[type="text"] {
+		width: 80%;
+		padding: 14px; 
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		font-size: 1.1rem;
+		margin-top: 20px;
+	}
+
+	/* Botón */
 	.btn-operation {
 		width: 45%;
 		background-color: #0969da;
@@ -55,54 +67,40 @@
 		cursor: pointer;
 		transition: all 0.3s;
 	}
+
 		/* Efecto hover */
 		.btn-operation:hover {
 			background-color: #0550ae;
-			color: white;
-			transform: scale(1.1); /* Aumento de tamaño */
+			transform: scale(1.1);
 		}
 
-	/* Textarea */
-	textarea {
-		width: 100%;
-		padding: 12px;
-		border-radius: 6px;
-		border: 1px solid #ccc;
-		margin-bottom: 15px;
-		font-size: 1.1rem;
-		resize: vertical;
-	}
-
-	/* Input for concatenation times */
-	input[type="number"] {
-		width: 100%;
-		padding: 12px;
-		border-radius: 6px;
-		border: 1px solid #ccc;
-		margin-bottom: 15px;
-		font-size: 1.1rem;
-	}
-
+	/* Mensaje de error */
 	.error {
 		color: red;
 		font-size: 1rem;
+		margin-top: 10px; 
+		text-align: center;
 	}
 </style>
 
 <h3>Kaprekar</h3>
 
 <div class="container">
+	<!-- Inputs -->
 	<div class="row">
-		<input type="number" @bind="numero" placeholder="Introduce un número" />
-		<button class="btn-operation" @onclick="VerificarKaprekar">Verificar</button>
+		<input type="text" @bind="numeroTexto" placeholder="Introduce un número" /> <!-- Campo de entrada para el número -->
+		<button class="btn-operation" @onclick="VerificarKaprekar">Verificar</button> <!-- Botón que ejecuta la verificación -->
 	</div>
-	@if (!string.IsNullOrEmpty(mensajeError))
+
+	<!-- Errores -->
+	@if (!string.IsNullOrEmpty(error))
 	{
 		<div class="row">
-			<p class="error">@mensajeError</p>
+			<p class="error">@error</p>
 		</div>
 	}
 
+	<!--Salida -->
 	@if (esKaprekar != null)
 	{
 		<div class="row">
@@ -114,45 +112,82 @@
 </div>
 
 @code {
-	private int numero;
-	private int? numeroKaprekar;
-	private bool? esKaprekar;
-	private int? operacionesKaprekar;
-	private string? mensajeError;
+	private string numeroTexto = ""; // Entrada del usuario
+	private int? numeroKaprekar;  // Almacena el número 
+	private bool? esKaprekar;  // Indica si el número es de Kaprekar o no
+	private int? operacionesKaprekar;  // Cantidad de operaciones realizadas en la verificación
+	private string? error;  // Para el mensaje de error
 
+	/// <summary>
+	/// Verifica si el número ingresado es de Kaprekar
+	/// </summary>
 	private async Task VerificarKaprekar()
 	{
+		// Valido la entrada para que el valor ingresado sea un número entero válido
+		if (!int.TryParse(numeroTexto, out int numero))
+		{
+			error = "Por favor, introduce un número entero válido.";
+			numeroKaprekar = null;
+			esKaprekar = null;
+			operacionesKaprekar = null;
+			return;
+		}
+
 		try
 		{
-			// Llamada a la API para verificar el número Kaprekar.
-			var response = await Http.GetAsync($"https://localhost:7123/api/kaprekar/{numero}");
-			response.EnsureSuccessStatusCode();
+			// Construyo la URL de la API
+			string url = $"https://localhost:7123/api/kaprekar/{numero}";
 
+			// Realiza la solicitud a la API
+			var response = await Http.GetAsync(url);
+			response.EnsureSuccessStatusCode(); // Lanzo una excepción si la respuesta no es exitosa
+
+			// Obtiene la respuesta JSON
 			var jsonResponse = await response.Content.ReadAsStringAsync();
-			var kaprekar = JsonSerializer.Deserialize<KaprekarResponse>(jsonResponse);
 
+			// Deserializo la respuesta JSON en un objeto KaprekarResponse
+			var kaprekar = JsonSerializer.Deserialize<KaprekarResponse>(jsonResponse, new JsonSerializerOptions
+				{
+					PropertyNameCaseInsensitive = true
+				});
+
+			// Si la respuesta no es null, actualizo las propiedades con los datos obtenidos
 			if (kaprekar != null)
 			{
 				numeroKaprekar = kaprekar.Numero;
 				esKaprekar = kaprekar.EsKaprekar;
 				operacionesKaprekar = kaprekar.Operaciones;
-				mensajeError = string.Empty; // Limpio mensaje de error si lo hubiera.
+				error = string.Empty; // Limpio cualquier mensaje de error anterior
 			}
 		}
 		catch (Exception ex)
 		{
-			mensajeError = "Ocurrió un error al verificar el número Kaprekar: " + ex.Message;
+			// En caso de errores con la API
+			error = "Ocurrió un error al verificar el número Kaprekar: " + ex.Message;
 			numeroKaprekar = null;
 			esKaprekar = null;
-			operacionesKaprekar = null; // Limpio resultado si hay un error.
+			operacionesKaprekar = null;
 		}
 	}
 
+	/// <summary>
+	/// Representa la respuesta de la API Kaprekar
+	/// </summary>
 	public class KaprekarResponse
 	{
+		/// <summary>
+		/// Número evaluado
+		/// </summary>
 		public int Numero { get; set; }
+
+		/// <summary>
+		/// Indica si el número es Kaprekar
+		/// </summary>
 		public bool EsKaprekar { get; set; }
+
+		/// <summary>
+		/// Número de operaciones realizadas para verificar si es Kaprekar
+		/// </summary>
 		public int Operaciones { get; set; }
 	}
-
 }

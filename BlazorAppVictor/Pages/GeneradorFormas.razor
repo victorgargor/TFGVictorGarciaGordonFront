@@ -1,0 +1,238 @@
+﻿@page "/formas"  
+@using System.Text.Json           
+@using System.Net.Http.Json       
+@inject HttpClient Http         
+
+<PageTitle>Formas</PageTitle>    
+
+<style>
+	/* Estilos globales */
+	body {
+		font-family: 'Poppins', sans-serif;
+		background-color: #f6f8fa;
+		color: #24292f;
+		margin: 0;
+		padding: 20px;
+		overflow: hidden;
+	}
+
+	/* Estilo para el título principal */
+	h3 {
+		color: black;
+		text-align: center;
+		font-size: 2.5rem;
+		font-weight: bold;
+		margin-bottom: 30px;
+	}
+
+	/* Estilo para el contenedor principal */
+	.container {
+		max-width: 600px;
+		margin: 0 auto;
+		padding: 20px;
+		border-radius: 12px;
+		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+		background-color: white;
+	}
+
+	/* Contenedor para los botones */
+	.row {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	/* Estilo para el botón */
+	.btn-operation {
+		width: 45%;
+		background-color: #0969da;
+		color: white;
+		font-size: 1.1rem;
+		font-weight: bold;
+		padding: 12px 20px;
+		border: solid 1px black;
+		border-radius: 6px;
+		margin: 5px;
+		margin-bottom: 15px;
+		cursor: pointer;
+		transition: all 0.3s;
+	}
+
+		/* Efecto hover para el botón */
+		.btn-operation:hover {
+			background-color: #0550ae;
+			color: white;
+			transform: scale(1.1);
+		}
+
+	/* Estilo para los grupos de formulario (cada input con su label) */
+	.form-group {
+		margin-bottom: 15px;
+		text-align: center;
+	}
+
+		/* Estilo para los labels  */
+		.form-group label {
+			display: block;
+			margin-bottom: 5px;
+			font-weight: bold;
+		}
+
+	/* Estilo para los inputs de tipo número */
+	input[type="number"] {
+		width: 80%;
+		padding: 12px;
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		font-size: 1rem;
+	}
+
+	/* Estilo para el resultado */
+	.resultado {
+		/* Permite conservar saltos de línea */
+		white-space: pre-wrap; 
+		background-color: #f0f0f0;
+		padding: 12px;
+		border-radius: 6px;
+		border: 1px solid #ccc;
+		margin-top: 30px;
+		font-size: 1rem;
+		height: 150px; 
+		overflow-y: auto;
+	}
+
+	/* Estilo para los mensajes de error */
+	.error {
+		color: red;
+		font-size: 1rem;
+		text-align: center;
+	}
+
+	/* Estilo para destacar los títulos de las propiedades de la salida */
+	.titulo-propiedad {
+		color: #d62828; 
+		font-weight: bold;
+		font-size: 1.1rem;
+	}
+</style>
+
+<!-- Contenedor principal  -->
+<div class="container">
+	<h3>Generar Formas</h3>
+
+	<!-- Inputs -->
+	<div class="form-group">
+		<label for="inputCirculos">Círculos</label>
+		<input id="inputCirculos" type="number" placeholder="Cantidad de Círculos" @bind="cantidadCirculos" min="0" />
+	</div>
+
+	<div class="form-group">
+		<label for="inputCuadrados">Cuadrados</label>
+		<input id="inputCuadrados" type="number" placeholder="Cantidad de Cuadrados" @bind="cantidadCuadrados" min="0" />
+	</div>
+
+	<div class="form-group">
+		<label for="inputTriangulos">Triángulos</label>
+		<input id="inputTriangulos" type="number" placeholder="Cantidad de Triángulos" @bind="cantidadTriangulos" min="0" />
+	</div>
+
+	<!-- Botón -->
+	<div class="row">
+		<button class="btn-operation" @onclick="GenerarFormas">Generar</button>
+	</div>
+
+	<!-- Errores -->
+	@if (!string.IsNullOrEmpty(error))
+	{
+		<p class="error">@error</p>
+	}
+
+	<!-- Salida -->
+	@if (!string.IsNullOrEmpty(resultadoHTML))
+	{
+		<div class="resultado">
+			@((MarkupString)resultadoHTML) 
+		</div>
+	}
+</div>
+
+@code {
+	// Cantidad de Círculos ingresada
+	private int cantidadCirculos;
+	// Cantidad de Cuadrados ingresada
+	private int cantidadCuadrados;
+	// Cantidad de Triángulos ingresada
+	private int cantidadTriangulos;
+
+	// Resultado en bruto obtenido de la API
+	private string resultado = "";
+	// Resultado procesado en HTML
+	private string resultadoHTML = "";
+	// Mensaje de error 
+	private string error = "";
+
+	/// <summary>
+	/// Método asíncrono para enviar la solicitud a la API y generar las formas.
+	/// Realiza validaciones previas similares a las del controlador.
+	/// </summary>
+	private async Task GenerarFormas()
+	{
+		// Reiniciar mensajes y estado de carga antes de procesar la solicitud
+		error = "";
+		resultado = "";
+		resultadoHTML = "";
+
+		// Valido que las cantidades no sean negativas (aunque el input impide valores negativos)
+		if (cantidadCirculos < 0 || cantidadCuadrados < 0 || cantidadTriangulos < 0)
+		{
+			error = "Las cantidades no pueden ser negativas.";
+			return; 
+		}
+
+		// Valido que al menos se haya ingresado una forma
+		if (cantidadCirculos == 0 && cantidadCuadrados == 0 && cantidadTriangulos == 0)
+		{
+			error = "Debe ingresar al menos una forma para generar.";
+			return; 
+		}
+
+		try
+		{
+			// Se crea un objeto con las cantidades ingresadas
+			var solicitudFormas = new
+			{
+				Circulos = cantidadCirculos,
+				Cuadrados = cantidadCuadrados,
+				Triangulos = cantidadTriangulos
+			};
+
+			// Se envía la solicitud a la API con la URL indicada
+			var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/formas", solicitudFormas);
+
+			
+			if (respuesta.IsSuccessStatusCode)
+			{
+				// Si la respuesta es exitosa, leo el contenido como cadena de texto
+				resultado = await respuesta.Content.ReadAsStringAsync();
+				
+				// Para formatear la salida
+				resultadoHTML = resultado
+					.Replace("Círculo:", "<span class='titulo-propiedad'>Círculo:</span>")
+					.Replace("Cuadrado:", "<span class='titulo-propiedad'>Cuadrado:</span>")
+					.Replace("Triángulo:", "<span class='titulo-propiedad'>Triángulo:</span>");
+			}
+			else
+			{
+				// Si hay errores 
+				error = $"Error: {respuesta.ReasonPhrase}";
+			}
+		}
+		catch (Exception ex)
+		{
+			// Manejo las excepciones
+			error = $"Excepción: {ex.Message}";
+		}
+	}
+}
+

@@ -87,21 +87,24 @@
         </div>
     </div>
 
-    <!-- Botón para navegar a la página de operaciones con fechas -->
     <div class="row">
         <div class="col-12 text-center">
             <button class="btn btn-operation mb-3" @onclick="IrAFecha">Fechas</button>
         </div>
     </div>
 
-    <!-- Nuevo botón para navegar a la página de ItemSeparator -->
     <div class="row">
         <div class="col-12 text-center">
             <button class="btn btn-operation mb-3" @onclick="IrAItemSeparator">ItemSeparator</button>
         </div>
     </div>
 
-    <!-- Botón para navegar a la página de Kaprekar -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrAFormas">Formas</button>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12 text-center">
             <button class="btn btn-operation mb-3" @onclick="IrAKaprekar">Kaprekar</button>
@@ -138,6 +141,12 @@
     private void IrAKaprekar()
     {
         NavigationManager.NavigateTo("/kaprekar");
+    }
+
+    // Función para navegar a la página del Generador de Formas
+    private void IrAFormas()
+    {
+        NavigationManager.NavigateTo("/formas");
     }
 
     [Inject] private NavigationManager NavigationManager { get; set; }
