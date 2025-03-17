@@ -140,7 +140,9 @@
 
 			// Realiza la solicitud a la API
 			var response = await Http.GetAsync(url);
-			response.EnsureSuccessStatusCode(); // Lanzo una excepción si la respuesta no es exitosa
+
+			// Lanzo una excepción si la respuesta no es exitosa
+			response.EnsureSuccessStatusCode(); 
 
 			// Obtiene la respuesta JSON
 			var jsonResponse = await response.Content.ReadAsStringAsync();
@@ -157,7 +159,8 @@
 				numeroKaprekar = kaprekar.Numero;
 				esKaprekar = kaprekar.EsKaprekar;
 				operacionesKaprekar = kaprekar.Operaciones;
-				error = string.Empty; // Limpio cualquier mensaje de error anterior
+				// Limpio cualquier mensaje de error anterior
+				error = string.Empty; 
 			}
 		}
 		catch (Exception ex)

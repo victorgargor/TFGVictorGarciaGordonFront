@@ -150,8 +150,10 @@
 		resultado = error = null;
 
 		// Valido la entrada
-		if (!ValidarEntradas(out double n1, out double n2))
+		if (!ValidarEntradas(out double n1, out double n2)){
 			return;
+		}
+			
 
 		// Comprobar que no se intente dividir por cero
 		if ((operacion == "division" || operacion == "modulo") && n2 == 0)

@@ -102,7 +102,7 @@
 	<div class="form-group">
 		<label for="inputTimes">Número de veces para concatenar:</label>
 		<input type="number" id="inputTimes" @bind="veces" min="1" max="100000" />
-		@if (!isValidTimes)
+		@if (!esValido)
 		{
 			<p class="error">El número de veces debe ser mayor a 0 y menor o igual a 100000.</p>
 		}
@@ -129,7 +129,7 @@
 	private string inputText = ""; // Este será el texto ingresado por el usuario
 	private string resultado = "";  // Este será el resultado de la operación
 	private int veces = 1; // El número de veces que se va a concatenar
-	private bool isValidTimes = true; // Valida si el número de veces es correcto
+	private bool esValido = true; // Valida si el número de veces es correcto
 
 	/// <summary>
 	/// Realiza la operación seleccionada.
@@ -147,10 +147,10 @@
 		// Validar la concatenación solo si la operación es "concatenar"
 		if (operacion == "concatenar" && (veces <= 0 || veces > 100000))
 		{
-			isValidTimes = false;
+			esValido = false;
 			return;  // Si no es válido, no hacemos nada
 		}
-		isValidTimes = true;
+		esValido = true;
 
 		// Construyo la URL para la API dependiendo de la operación
 		string url = $"https://localhost:7123/api/texto/{operacion}";
