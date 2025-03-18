@@ -1,229 +1,366 @@
 ﻿@page "/calculadora"
+@using System.Globalization
 @using System.Text.Json
 @inject HttpClient Http
+@inject SweetAlertService Swal
 
 <PageTitle>Calculadora</PageTitle>
 
 <style>
-	/* Estilos globales */
+	/* Estilos generales */
+	* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: sans-serif;
+	}
+
 	body {
-		font-family: 'Poppins', sans-serif;
-		background-color: #f6f8fa;
-		color: #24292f;
-		margin: 0;
-		padding: 20px;
-		overflow: hidden;
+	min-height: 100vh;
+	background-color: #f6f8fa;
+	margin: 0;
+	padding: 20px;
+	overflow: hidden;
 	}
 
 	/* Título */
 	h1 {
-		color: black;
-		text-align: center;
-		font-size: 2.5rem; /* Aumentamos el tamaño del h1 */
-		font-weight: bold;
-		margin-bottom: 30px; /* Añadimos separación entre el título y el formulario */
+	color: black;
+	text-align: center;
+	font-size: 3rem;
+	font-weight: bold;
+	margin-bottom: 20px;
 	}
 
-	/* Estilo para el párrafo destacado */
-	.highlighted-text {
-		font-weight: 300;
-		font-size: 1.1rem;
-		color: #555;
-		text-align: center;
-		margin-bottom: 20px;
-	}
-
-	/* Contenedor principal */
+	/* Contenedor para centrar la calculadora y el selector de decimales */
 	.container {
-		max-width: 600px;
-		margin: 0 auto;
-		padding: 20px;
-		border-radius: 12px;
-		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1); /* Sombra para destacarlo */
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 	}
 
-	/* Estilo para los botones */
-	.btn-operation {
-		background-color: #0969da;
-		color: white;
-		font-size: 1.1rem;
-		font-weight: bold;
-		padding: 12px 20px;
-		border: solid 1px black;
-		border-radius: 6px;
-		margin: 5px;
-		cursor: pointer;
-		transition: all 0.3s;
+	/* Contenedor del selector de decimales */
+	.decimales-container {
+	margin-bottom: 1rem;
+	text-align: center;
 	}
 
-		/* Efecto hover */
-		.btn-operation:hover {
-			background-color: #0550ae;
-			color: white;
-			transform: scale(1.1); /* Aumento de tamaño */
-		}
-
-	/* Asegura que los botones estén uno debajo del otro */
-	.row {
-		display: flex;
-		justify-content: space-between;
-		margin-top: 20px;
-		flex-wrap: wrap; /* Por si no caben en una sola línea */
+	/* Estilo para el input del número de decimales */
+	input[type="number"]#numDecimales {
+	width: 60px;
+	padding: 0.3rem;
+	margin-left: 5px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 1rem;
+	text-align: center;
+	color: #333;
+	background-color: #fff;
 	}
 
-	.mb-3 {
-		margin-bottom: 15px; /* Añade espacio entre los botones */
+	/* Estilos de la calculadora */
+	.calculadora {
+	background-color: #48bfff;
+	color: white;
+	width: 350px;
+	max-width: 100%;
+	padding: 1.5rem;
+	border-radius: 1.5rem;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 0.5rem;
+	box-shadow: 0 0 20px #48bfff;
+	}
+
+	/* Pantalla donde se muestra el valor actual */
+	.pantalla {
+	grid-column: 1 / 5;
+	background-color: #090c31;
+	padding: 1.5rem;
+	text-align: right;
+	border-radius: 0.5rem;
+	margin-bottom: 1.5rem;
+	font-family: monospace;
+	font-weight: bold;
+	font-size: 2rem;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	}
+
+	.btn {
+	background-color: #006da7;
+	color: white;
+	border: 0;
+	padding: 1.5rem 0.5rem;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 0.5rem;
+	cursor: pointer;
+	}
+
+	.btn:hover {
+	background-color: #004f78;
+	}
+
+	#cero {
+	grid-column: span 2;
+	}
+
+	#igual {
+	grid-row: span 2;
+	background-color: #e65766;
+	}
+
+	#igual:hover {
+	background-color: #e6394a;
 	}
 </style>
 
 <h1>¡Calculadora!</h1>
 
+<!-- Selector para el número de decimales -->
+<div class="decimales-container">
+	<label for="numDecimales">Número de decimales:</label>
+	<input type="number" id="numDecimales" @bind="NumeroDecimales" />
+</div>
+
 <div class="container">
-	<!-- Inputs -->
-	<div class="row">
-		<div class="col-12">
-			<div class="form-group">
-				<label for="num1">Número 1:</label>
-				<input type="text" id="num1" class="form-control" @bind="num1" placeholder="Ingrese el primer número" />
-			</div>
-			<div class="form-group">
-				<label for="num2">Número 2:</label>
-				<input type="text" id="num2" class="form-control" @bind="num2" placeholder="Ingrese el segundo número" />
-			</div>
-			<div class="form-group">
-				<label for="numDec">Número de Decimales:</label>
-				<input type="number" id="numDec" class="form-control" @bind="numDec" placeholder="Cantidad de decimales" />
-			</div>
-		</div>
-	</div>
-
-	<!-- Botones -->
-	<div class="row mt-3">
-		<div class="col-12 text-center">
-			<button class="btn btn-operation" @onclick='() => RealizarOperacion("suma")'>Suma</button>
-			<button class="btn btn-operation" @onclick='() => RealizarOperacion("resta")'>Resta</button>
-			<button class="btn btn-operation" @onclick='() => RealizarOperacion("multiplicacion")'>Multiplicación</button>
-			<button class="btn btn-operation" @onclick='() => RealizarOperacion("division")'>División</button>
-			<button class="btn btn-operation" @onclick='() => RealizarOperacion("modulo")'>Módulo</button>
-			<button class="btn btn-operation" @onclick='() => RealizarOperacion("comparacion")'>Comparar</button>
-		</div>
-	</div>
-
-	<!-- Salidas -->
-	<div class="row mt-3">
-		<div class="col-12 text-center">
-			<!-- Muestra el resultado si no es nulo o vacío -->
-			@if (!string.IsNullOrEmpty(resultado))
-			{
-				<div class="result-box">
-					<h4>Resultado: <span class="result-text">@resultado</span></h4>
-				</div>
-			}
-			<!-- Muestra un mensaje de error si hay -->
-			@if (!string.IsNullOrEmpty(error))
-			{
-				<div class="alert alert-danger error-box">
-					<i class="bi bi-x-circle"></i> <strong>¡Error!</strong> @error
-				</div>
-			}
-		</div>
+	<div class="calculadora">
+		<!-- Pantalla de la calculadora -->
+		<div class="pantalla" style='@ObtenerEstiloPantalla()'>@pantallaActual</div>
+		<!-- Botón para reiniciar -->
+		<button class="btn" @onclick='() => ManejarClickBoton("C")'>C</button>
+		<!-- Botón para la operación de módulo -->
+		<button class="btn" @onclick='() => ManejarClickBoton("%")'>%</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("/")'>/</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("*")'>*</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("7")'>7</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("8")'>8</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("9")'>9</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("-")'>-</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("4")'>4</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("5")'>5</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("6")'>6</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("+")'>+</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("1")'>1</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("2")'>2</button>
+		<button class="btn" @onclick='() => ManejarClickBoton("3")'>3</button>
+		<button class="btn" id="igual" @onclick='() => ManejarClickBoton("=")'>=</button>
+		<button class="btn" id="cero" @onclick='() => ManejarClickBoton("0")'>0</button>
+		<button class="btn" @onclick='() => ManejarClickBoton(".")'>.</button>
 	</div>
 </div>
 
 @code {
-	// Por defecto los valores son 0 para los números y 2 para los decimales
-	private string num1 = "0";
-	private string num2 = "0";
-	private int numDec = 2;
-	private string? resultado; // Variable para almacenar los resultados
-	private string? error; // Variable para almacenar los errores
+	/// <summary>
+	/// Valor que se muestra actualmente en la pantalla de la calculadora.
+	/// </summary>
+	private string pantallaActual = "0";
 
 	/// <summary>
-	/// Método encargado de realizar la operación seleccionada por el usuario.
-	/// Valida la entrada, evita la división por cero y construye la URL para hacer la petición a la API.
+	/// Almacena el primer operando ingresado.
 	/// </summary>
-	/// <param name="operacion">El tipo de operación que se va a realizar (suma, resta, multiplicación, etc.)</param>
-	/// <returns>Una tarea asíncrona para realizar la operación.</returns>
-	private async Task RealizarOperacion(string operacion)
+	private string? primerOperando;
+
+	/// <summary>
+	/// Almacena el operador seleccionado.
+	/// </summary>
+	private string? operadorActual;
+
+	/// <summary>
+	/// Indica si se debe limpiar la pantalla para una nueva entrada.
+	/// </summary>
+	private bool nuevaEntrada = false;
+
+	private int _numeroDecimales = 2;
+	/// <summary>
+	/// Número de decimales para redondear el resultado.
+	/// Se ajusta automáticamente: si es negativo se fija en 0 y si es mayor a 8 se fija en 8.
+	/// </summary>
+	private int NumeroDecimales
 	{
-		// Limpiar cualquier resultado o error anterior
-		resultado = error = null;
-
-		// Valido la entrada
-		if (!ValidarEntradas(out double n1, out double n2)){
-			return;
-		}
-			
-
-		// Comprobar que no se intente dividir por cero
-		if ((operacion == "division" || operacion == "modulo") && n2 == 0)
+		get => _numeroDecimales;
+		set
 		{
-			error = "No se puede dividir por 0.";
-			return;
+			if (value < 0)
+			{
+				_numeroDecimales = 0;
+			}
+			else if (value > 8)
+			{
+				_numeroDecimales = 8;
+			}
+			else
+			{
+				_numeroDecimales = value;
+			}
 		}
-
-		// Construyo la URL para la API dependiendo de la operación
-		string url = operacion == "comparacion"
-			? $"https://localhost:7123/api/calculadora/comparacion/{num1}/{num2}" // URL para comparación
-			: $"https://localhost:7123/api/calculadora/{operacion}/{num1}/{num2}/{numDec}"; // URL para operaciones matemáticas
-
-		// Obtengo el resultado
-		await ObtenerResultado(url);
 	}
 
 	/// <summary>
-	/// Valida la entrada de los números, asegurando que sean válidos y que estén en el formato correcto.
+	/// Devuelve un estilo en línea para la pantalla, ajustando el tamaño de fuente según la longitud del texto.
+	/// Así se evita que un número muy grande se desborde.
 	/// </summary>
-	/// <param name="n1">El primer número a validar.</param>
-	/// <param name="n2">El segundo número a validar.</param>
-	/// <returns>Devuelve true si las entradas son válidas, false en caso contrario.</returns>
-	private bool ValidarEntradas(out double n1, out double n2)
+	/// <returns>Una cadena de estilo CSS.</returns>
+	private string ObtenerEstiloPantalla()
 	{
-		n1 = n2 = 0;
+		int longitud = pantallaActual.Length;
+		string fontSize = "2rem"; // tamaño base
 
-		// Comprobar que los números no estén vacíos
-		if (string.IsNullOrWhiteSpace(num1) || string.IsNullOrWhiteSpace(num2))
-		{
-			error = "Ingrese ambos números."; // Si falta algún número
-			return false;
-		}
+		if (longitud <= 10)
+			fontSize = "2rem";
+		else if (longitud <= 15)
+			fontSize = "1.8rem";
+		else if (longitud <= 20)
+			fontSize = "1.6rem";
+		else if (longitud <= 25)
+			fontSize = "1.4rem";
+		else
+			fontSize = "1.2rem";
 
-		// Solo permito el punto (.) como separador decimal
-		if (num1.Contains(',') || num2.Contains(','))
-		{
-			error = "Use punto (.) como separador decimal.";
-			return false;
-		}
-
-		// Si los datos proporcionados no son números válidos
-		if (!double.TryParse(num1, out n1) || !double.TryParse(num2, out n2))
-		{
-			error = "Valores inválidos, ingrese solo números.";
-			return false;
-		}
-
-		return true; // Si todo es correcto, se devuelve true
+		// Se incluyen propiedades para evitar desbordamiento
+		return $"font-size: {fontSize}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;";
 	}
 
 	/// <summary>
-	/// Realiza una petición a la API para obtener el resultado de la operación.
+	/// Maneja el clic en cada botón de la calculadora.
+	/// Según el botón presionado, actualiza la pantalla, almacena el operando u operador o ejecuta la operación.
 	/// </summary>
-	/// <param name="url">La URL de la API para la operación deseada.</param>
-	/// <returns>Una tarea asíncrona que obtiene el resultado.</returns>
-	private async Task ObtenerResultado(string url)
+	/// <param name="valor">Valor del botón presionado.</param>
+	private async Task ManejarClickBoton(string valor)
 	{
-		try
+		// Se podría limpiar un mensaje de error previo si lo estuvieses mostrando, pero ahora se usan alertas.
+		if (valor == "C")
 		{
-			// Hacer la solicitud GET a la API
-			var respuesta = await Http.GetFromJsonAsync<JsonElement>(url);
-
-			// Obtener el resultado de la respuesta JSON
-			resultado = respuesta.TryGetProperty("resultado", out var resJson) ? resJson.ToString() : "Error en la operación.";
+			// Reiniciar la calculadora
+			pantallaActual = "0";
+			primerOperando = null;
+			operadorActual = null;
+			nuevaEntrada = false;
 		}
-		catch (Exception ex)
+		else if (valor == "=")
 		{
-			// Si hay un error, se captura y se muestra el mensaje de error
-			error = $"Error: {ex.Message}";
+			// Ejecutar la operación a través de la API
+			await EjecutarOperacion();
+		}
+		// Si se presiona un operador (incluyendo '%')
+		else if (valor == "+" || valor == "-" || valor == "*" || valor == "/" || valor == "%")
+		{
+			primerOperando = pantallaActual;
+			if (pantallaActual == ".")
+			{
+				await Swal.FireAsync("Error", "No se puede operar con el (.)", SweetAlertIcon.Error);
+				return;
+			}
+			else
+			{
+				operadorActual = valor;
+			}			
+			nuevaEntrada = true;
+		}
+		else
+		{
+			// Se ingresó un dígito o el punto decimal
+			if (nuevaEntrada)
+			{
+				pantallaActual = "";
+				nuevaEntrada = false;
+			}
+
+			// Evitar más de un punto decimal
+			if (valor == "." && pantallaActual.Contains("."))
+			{
+				return;
+			}
+
+			// Si la pantalla muestra "0", se reemplaza salvo que se ingrese un punto
+			if (pantallaActual == "0" && valor != ".")
+			{
+				pantallaActual = valor;
+			}
+			else
+			{
+				pantallaActual += valor;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Ejecuta la operación seleccionada llamando a la API.
+	/// Valida que no se intente dividir o calcular módulo por cero, mapea el operador al endpoint correspondiente
+	/// y actualiza la pantalla con el resultado formateado con separador de miles y el número de decimales indicado.
+	/// </summary>
+	private async Task EjecutarOperacion()
+	{
+		if (primerOperando != null && operadorActual != null)
+		{
+			// Validar que no se intente dividir o calcular módulo por cero
+			if ((operadorActual == "/" || operadorActual == "%") && pantallaActual == "0")
+			{
+				await Swal.FireAsync("Error", "No se puede dividir por 0.", SweetAlertIcon.Error);
+				return;
+			}
+
+			// Mapear el operador al endpoint de la API
+			string operacion = operadorActual switch
+			{
+				"+" => "suma",
+				"-" => "resta",
+				"*" => "multiplicacion",
+				"/" => "division",
+				"%" => "modulo",
+				_ => ""
+			};
+
+			if (string.IsNullOrEmpty(operacion))
+			{
+				await Swal.FireAsync("Error", "Operador no soportado.", SweetAlertIcon.Error);
+				return;
+			}
+
+			// Construir la URL para llamar a la API
+			string url = $"https://localhost:7123/api/calculadora/{operacion}/{primerOperando}/{pantallaActual}/{NumeroDecimales}";
+
+			try
+			{
+				// Solicitar la operación a la API y obtener la respuesta
+				var respuesta = await Http.GetFromJsonAsync<JsonElement>(url);
+				if (respuesta.TryGetProperty("resultado", out var resultadoJson))
+				{
+					// Intentar convertir el resultado a número y formatearlo con separador de miles
+					if (double.TryParse(resultadoJson.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double valor))
+					{
+						if (Math.Abs(valor) >= 1e10 || (Math.Abs(valor) > 0 && Math.Abs(valor) < 1e-6))
+						{
+							pantallaActual = valor.ToString("E", CultureInfo.InvariantCulture);
+						}
+						else
+						{
+							pantallaActual = valor.ToString($"N{NumeroDecimales}", CultureInfo.InvariantCulture);
+						}
+					}
+					else
+					{
+						pantallaActual = resultadoJson.ToString();
+					}
+				}
+				else
+				{
+					await Swal.FireAsync("Error", "Error en la operación.", SweetAlertIcon.Error);
+				}
+			}
+			catch (Exception ex)
+			{
+				await Swal.FireAsync("Error", $"{ex.Message}", SweetAlertIcon.Error);
+			}
+
+			// Reiniciar los valores para la siguiente operación
+			primerOperando = null;
+			operadorActual = null;
+			nuevaEntrada = true;
 		}
 	}
 }
