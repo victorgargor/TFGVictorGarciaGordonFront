@@ -9,119 +9,116 @@
 <style>
 	/* Estilos generales */
 	* {
-	margin: 0;
-	padding: 0;
-	box-sizing: border-box;
-	font-family: sans-serif;
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		font-family: sans-serif;
 	}
 
 	body {
-	min-height: 100vh;
-	background-color: #f6f8fa;
-	margin: 0;
-	padding: 20px;
-	overflow: hidden;
+		min-height: 100vh;
+		background-color: #f6f8fa;
+		padding: 20px;
+		overflow: hidden;
 	}
 
 	/* Título */
 	h1 {
-	color: black;
-	text-align: center;
-	font-size: 3rem;
-	font-weight: bold;
-	margin-bottom: 20px;
+		color: black;
+		text-align: center;
+		font-size: 3rem;
+		font-weight: bold;
+		margin-bottom: 20px;
 	}
 
-	/* Contenedor para centrar la calculadora y el selector de decimales */
+	/* Contenedor principal */
 	.container {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
 	}
 
-	/* Contenedor del selector de decimales */
+	/* Número de decimales */
 	.decimales-container {
-	margin-bottom: 1rem;
-	text-align: center;
+		margin-bottom: 1rem;
+		text-align: center;
 	}
 
-	/* Estilo para el input del número de decimales */
 	input[type="number"]#numDecimales {
-	width: 60px;
-	padding: 0.3rem;
-	margin-left: 5px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	font-size: 1rem;
-	text-align: center;
-	color: #333;
-	background-color: #fff;
+		width: 60px;
+		padding: 0.3rem;
+		margin-left: 5px;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		font-size: 1rem;
+		text-align: center;
+		color: #333;
+		background-color: #fff;
 	}
 
-	/* Estilos de la calculadora */
+	/* Calculadora y sus componentes */
 	.calculadora {
-	background-color: #48bfff;
-	color: white;
-	width: 350px;
-	max-width: 100%;
-	padding: 1.5rem;
-	border-radius: 1.5rem;
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 0.5rem;
-	box-shadow: 0 0 20px #48bfff;
+		background-color: #48bfff;
+		color: white;
+		width: 350px;
+		max-width: 100%;
+		padding: 1.5rem;
+		border-radius: 1.5rem;
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.5rem;
+		box-shadow: 0 0 20px #48bfff;
 	}
 
-	/* Pantalla donde se muestra el valor actual */
 	.pantalla {
-	grid-column: 1 / 5;
-	background-color: #090c31;
-	padding: 1.5rem;
-	text-align: right;
-	border-radius: 0.5rem;
-	margin-bottom: 1.5rem;
-	font-family: monospace;
-	font-weight: bold;
-	font-size: 2rem;
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
+		grid-column: 1 / 5;
+		background-color: #090c31;
+		padding: 1.5rem;
+		text-align: right;
+		border-radius: 0.5rem;
+		margin-bottom: 1.5rem;
+		font-family: monospace;
+		font-weight: bold;
+		font-size: 2rem;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 
 	.btn {
-	background-color: #006da7;
-	color: white;
-	border: 0;
-	padding: 1.5rem 0.5rem;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border-radius: 0.5rem;
-	cursor: pointer;
+		background-color: #006da7;
+		color: white;
+		border: 0;
+		padding: 1.5rem 0.5rem;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		border-radius: 0.5rem;
+		cursor: pointer;
 	}
 
-	.btn:hover {
-	background-color: #004f78;
-	}
+		.btn:hover {
+			background-color: #004f78;
+		}
 
 	#cero {
-	grid-column: span 2;
+		grid-column: span 2;
 	}
 
 	#igual {
-	grid-row: span 2;
-	background-color: #e65766;
+		grid-row: span 2;
+		background-color: #e65766;
 	}
 
-	#igual:hover {
-	background-color: #e6394a;
-	}
+		#igual:hover {
+			background-color: #e6394a;
+		}
 </style>
 
 <h1>¡Calculadora!</h1>
 
-<!-- Selector para el número de decimales -->
+<!-- Inputs -->
 <div class="decimales-container">
 	<label for="numDecimales">Número de decimales:</label>
 	<input type="number" id="numDecimales" @bind="NumeroDecimales" />
@@ -129,11 +126,10 @@
 
 <div class="container">
 	<div class="calculadora">
-		<!-- Pantalla de la calculadora -->
+		<!-- Pantalla -->
 		<div class="pantalla" style='@ObtenerEstiloPantalla()'>@pantallaActual</div>
-		<!-- Botón para reiniciar -->
+		<!-- Botones -->
 		<button class="btn" @onclick='() => ManejarClickBoton("C")'>C</button>
-		<!-- Botón para la operación de módulo -->
 		<button class="btn" @onclick='() => ManejarClickBoton("%")'>%</button>
 		<button class="btn" @onclick='() => ManejarClickBoton("/")'>/</button>
 		<button class="btn" @onclick='() => ManejarClickBoton("*")'>*</button>
@@ -155,156 +151,169 @@
 </div>
 
 @code {
-	/// <summary>
-	/// Valor que se muestra actualmente en la pantalla de la calculadora.
-	/// </summary>
+	// Valor actual que se muestra en la pantalla.
 	private string pantallaActual = "0";
 
-	/// <summary>
-	/// Almacena el primer operando ingresado.
-	/// </summary>
+	// Primer operando y operador actual.
 	private string? primerOperando;
-
-	/// <summary>
-	/// Almacena el operador seleccionado.
-	/// </summary>
 	private string? operadorActual;
 
-	/// <summary>
-	/// Indica si se debe limpiar la pantalla para una nueva entrada.
-	/// </summary>
+	// Indica si el próximo dígito debe limpiar la pantalla.
 	private bool nuevaEntrada = false;
 
-	private int _numeroDecimales = 2;
+	// Variable interna para almacenar el número de decimales (por defecto 2).
+	private int numeroDecimalesInterno = 2;
+
 	/// <summary>
-	/// Número de decimales para redondear el resultado.
-	/// Se ajusta automáticamente: si es negativo se fija en 0 y si es mayor a 8 se fija en 8.
+	/// Propiedad para gestionar el número de decimales (entre 0 y 8).
+	/// Si el valor es menor que 0 se fija en 0 y si es mayor que 8 se fija en 8.
 	/// </summary>
 	private int NumeroDecimales
 	{
-		get => _numeroDecimales;
+		get => numeroDecimalesInterno;
 		set
 		{
 			if (value < 0)
-			{
-				_numeroDecimales = 0;
-			}
+				numeroDecimalesInterno = 0;
 			else if (value > 8)
-			{
-				_numeroDecimales = 8;
-			}
+				numeroDecimalesInterno = 8;
 			else
-			{
-				_numeroDecimales = value;
-			}
+				numeroDecimalesInterno = value;
 		}
 	}
 
 	/// <summary>
-	/// Devuelve un estilo en línea para la pantalla, ajustando el tamaño de fuente según la longitud del texto.
-	/// Así se evita que un número muy grande se desborde.
+	/// Devuelve una línea de estilos para la pantalla ajustando el tamaño de fuente según la longitud del texto.
 	/// </summary>
-	/// <returns>Una cadena de estilo CSS.</returns>
 	private string ObtenerEstiloPantalla()
 	{
 		int longitud = pantallaActual.Length;
-		string fontSize = "2rem"; // tamaño base
 
-		if (longitud <= 10)
-			fontSize = "2rem";
-		else if (longitud <= 15)
-			fontSize = "1.8rem";
-		else if (longitud <= 20)
-			fontSize = "1.6rem";
-		else if (longitud <= 25)
-			fontSize = "1.4rem";
-		else
-			fontSize = "1.2rem";
-
-		// Se incluyen propiedades para evitar desbordamiento
-		return $"font-size: {fontSize}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;";
+		// Ajusto el tamaño de fuente según la longitud del texto.
+		string tamanioFuente = longitud switch
+		{
+			<= 10 => "2rem",
+			<= 15 => "1.8rem",
+			<= 20 => "1.6rem",
+			<= 25 => "1.4rem",
+			_ => "1.2rem"
+		};
+		// Para evitar que el texto se desborde y muestra "..." si se necesita (no porque tengo la notación científica).
+		return $"font-size: {tamanioFuente}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;";
 	}
 
 	/// <summary>
-	/// Maneja el clic en cada botón de la calculadora.
-	/// Según el botón presionado, actualiza la pantalla, almacena el operando u operador o ejecuta la operación.
+	/// Maneja la acción de cada botón de la calculadora.
+	/// Actualiza la pantalla, gestiona operandos y operadores, y llama a la API cuando es necesario.
 	/// </summary>
-	/// <param name="valor">Valor del botón presionado.</param>
 	private async Task ManejarClickBoton(string valor)
 	{
-		// Se podría limpiar un mensaje de error previo si lo estuvieses mostrando, pero ahora se usan alertas.
+		// Si se presiona "C" reinicio la calculadora.
 		if (valor == "C")
 		{
-			// Reiniciar la calculadora
 			pantallaActual = "0";
-			primerOperando = null;
-			operadorActual = null;
+			primerOperando = operadorActual = null;
 			nuevaEntrada = false;
+			return;
 		}
-		else if (valor == "=")
+
+		// Si se presiona "=" se ejecuta la operación.
+		if (valor == "=")
 		{
-			// Ejecutar la operación a través de la API
 			await EjecutarOperacion();
+			return;
 		}
-		// Si se presiona un operador (incluyendo '%')
-		else if (valor == "+" || valor == "-" || valor == "*" || valor == "/" || valor == "%")
+
+		// Proceso los distintos operadores.
+		if (valor is "+" or "-" or "*" or "/" or "%")
 		{
-			primerOperando = pantallaActual;
+			// No se permite hacer operaciones si la pantalla tiene solo un "-"
+			if (pantallaActual == "-")
+			{
+				await Swal.FireAsync("Error", "No se puede operar con el (-)", SweetAlertIcon.Error);
+				return;
+			}
+			// Para poder operar con números negativos.
+			if (valor == "-" && primerOperando is null && (pantallaActual == "0" || pantallaActual == ""))
+			{
+				pantallaActual = "-";
+				return;
+			}
+			// Si se ponen dos operadores seguidos.
+			if (primerOperando is not null && operadorActual is not null && nuevaEntrada)
+			{
+				await Swal.FireAsync("Error", "No se puede operar con dos operadores", SweetAlertIcon.Error);
+				primerOperando = operadorActual = null;
+				nuevaEntrada = false;
+				return;
+			}
+			// Si hay operando y operador se ejecuta la operación y encadeno la siguiente.
+			if (primerOperando is not null && operadorActual is not null && !nuevaEntrada)
+			{
+				await EjecutarOperacion();
+				primerOperando = pantallaActual;
+				operadorActual = valor;
+				nuevaEntrada = true;
+				return;
+			}
+			// Evito que se puedan hacer operaciones con el "."
 			if (pantallaActual == ".")
 			{
 				await Swal.FireAsync("Error", "No se puede operar con el (.)", SweetAlertIcon.Error);
 				return;
 			}
-			else
-			{
-				operadorActual = valor;
-			}			
+			// Guardo el operando actual y el operador.
+			primerOperando = pantallaActual;
+			operadorActual = valor;
 			nuevaEntrada = true;
+			return;
 		}
-		else
-		{
-			// Se ingresó un dígito o el punto decimal
-			if (nuevaEntrada)
-			{
-				pantallaActual = "";
-				nuevaEntrada = false;
-			}
 
-			// Evitar más de un punto decimal
-			if (valor == "." && pantallaActual.Contains("."))
+		// Proceso los dígitos y el punto decimal.
+		if (nuevaEntrada)
+		{
+			// No permite operar solo con el "."
+			if (valor == ".")
 			{
+				await Swal.FireAsync("Error", "No se puede operar con el (.)", SweetAlertIcon.Error);
 				return;
 			}
-
-			// Si la pantalla muestra "0", se reemplaza salvo que se ingrese un punto
-			if (pantallaActual == "0" && valor != ".")
-			{
-				pantallaActual = valor;
-			}
-			else
-			{
-				pantallaActual += valor;
-			}
+			pantallaActual = "";
+			nuevaEntrada = false;
 		}
+		// Para que no se pueda poner más de un punto.
+		if (valor == "." && pantallaActual.Contains("."))
+		{
+			return;
+		}
+		// Si la pantalla es "0" y se ingresa otro dígito (no vale ".") se reemplaza y sino se concatena.
+		pantallaActual = (pantallaActual == "0" && valor != ".") ? valor : pantallaActual + valor;
 	}
 
 	/// <summary>
-	/// Ejecuta la operación seleccionada llamando a la API.
-	/// Valida que no se intente dividir o calcular módulo por cero, mapea el operador al endpoint correspondiente
-	/// y actualiza la pantalla con el resultado formateado con separador de miles y el número de decimales indicado.
+	/// Llama a la API para ejecutar la operación actual.
+	/// Antes de llamar a la API, convierte los operandos para que no tengan separadores de miles;
+	/// luego, una vez obtenido el resultado, lo formatea para mostrarlo con separadores.
 	/// </summary>
 	private async Task EjecutarOperacion()
 	{
-		if (primerOperando != null && operadorActual != null)
+		// Verifico que no se intente operar solo con un "-".
+		if ((primerOperando == "-") || (pantallaActual == "-"))
 		{
-			// Validar que no se intente dividir o calcular módulo por cero
-			if ((operadorActual == "/" || operadorActual == "%") && pantallaActual == "0")
+			await Swal.FireAsync("Error", "No se puede operar con el (-)", SweetAlertIcon.Error);
+			return;
+		}
+
+		if (primerOperando is not null && operadorActual is not null)
+		{
+			// Controlo la división y el módulo por 0.
+			if ((operadorActual == "/" || operadorActual == "%") && (pantallaActual == "0" || pantallaActual=="0."))
 			{
 				await Swal.FireAsync("Error", "No se puede dividir por 0.", SweetAlertIcon.Error);
 				return;
 			}
 
-			// Mapear el operador al endpoint de la API
+			// Mapeo el operador al endpoint correspondiente de la API.
 			string operacion = operadorActual switch
 			{
 				"+" => "suma",
@@ -314,33 +323,41 @@
 				"%" => "modulo",
 				_ => ""
 			};
-
 			if (string.IsNullOrEmpty(operacion))
 			{
 				await Swal.FireAsync("Error", "Operador no soportado.", SweetAlertIcon.Error);
 				return;
 			}
 
-			// Construir la URL para llamar a la API
-			string url = $"https://localhost:7123/api/calculadora/{operacion}/{primerOperando}/{pantallaActual}/{NumeroDecimales}";
+			// Convierto los operandos para eliminar los separadores de miles.
+			if (!double.TryParse(primerOperando, NumberStyles.AllowThousands | NumberStyles.Any, CultureInfo.InvariantCulture, out double operador1))
+			{
+				await Swal.FireAsync("Error", "Error al convertir el primer operando.", SweetAlertIcon.Error);
+				return;
+			}
+			if (!double.TryParse(pantallaActual, NumberStyles.AllowThousands | NumberStyles.Any, CultureInfo.InvariantCulture, out double operador2))
+			{
+				await Swal.FireAsync("Error", "Error al convertir el segundo operando.", SweetAlertIcon.Error);
+				return;
+			}
+			// Formateo los operandos sin separadores (formato "F" fixed-point).
+			string primerOperandoSinFormato = operador1.ToString("F", CultureInfo.InvariantCulture);
+			string pantallaActualSinFormato = operador2.ToString("F", CultureInfo.InvariantCulture);
 
+			// Construyo la URL para llamar a la API.
+			string url = $"https://localhost:7123/api/calculadora/{operacion}/{primerOperandoSinFormato}/{pantallaActualSinFormato}/{NumeroDecimales}";
 			try
 			{
-				// Solicitar la operación a la API y obtener la respuesta
 				var respuesta = await Http.GetFromJsonAsync<JsonElement>(url);
 				if (respuesta.TryGetProperty("resultado", out var resultadoJson))
 				{
-					// Intentar convertir el resultado a número y formatearlo con separador de miles
+					// Convierto el resultado a número.
 					if (double.TryParse(resultadoJson.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double valor))
 					{
-						if (Math.Abs(valor) >= 1e10 || (Math.Abs(valor) > 0 && Math.Abs(valor) < 1e-6))
-						{
-							pantallaActual = valor.ToString("E", CultureInfo.InvariantCulture);
-						}
-						else
-						{
-							pantallaActual = valor.ToString($"N{NumeroDecimales}", CultureInfo.InvariantCulture);
-						}
+						// Formateo el resultado para mostrarlo con separadores de miles (formato "N" number) o en notación científica si es muy grande o pequeño.
+						pantallaActual = (Math.Abs(valor) >= 1e8 || (Math.Abs(valor) > 0 && Math.Abs(valor) < 1e-6))
+							? valor.ToString("E", CultureInfo.InvariantCulture)
+							: valor.ToString($"N{NumeroDecimales}", CultureInfo.InvariantCulture);
 					}
 					else
 					{
@@ -354,13 +371,12 @@
 			}
 			catch (Exception ex)
 			{
-				await Swal.FireAsync("Error", $"{ex.Message}", SweetAlertIcon.Error);
+				await Swal.FireAsync("Error", ex.StackTrace, SweetAlertIcon.Error);
 			}
-
-			// Reiniciar los valores para la siguiente operación
-			primerOperando = null;
-			operadorActual = null;
+			// Reinicio para la siguiente operación
+			primerOperando = operadorActual = null;
 			nuevaEntrada = true;
 		}
 	}
 }
+
