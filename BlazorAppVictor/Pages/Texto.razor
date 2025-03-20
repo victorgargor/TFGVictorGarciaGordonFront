@@ -1,6 +1,8 @@
 ﻿@page "/texto"
 @using System.Text.Json
+@using System.Text
 @inject HttpClient Http
+@inject SweetAlertService Swal
 
 <PageTitle>Operaciones con Texto</PageTitle>
 
@@ -12,81 +14,117 @@
 		color: #24292f;
 		margin: 0;
 		padding: 20px;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		justify-content: center; /* Centrar verticalmente */
 		overflow: hidden;
+	}
+
+	/* Contenedor principal */
+	.container {
+		max-width: 1400px;
+		width: 90%;
+		margin: auto;
+		padding: 20px;
+		margin-top: 100px;
+		border-radius: 12px;
+		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+		display: grid;
+		grid-template-columns: 2fr 1fr 2fr;
+		gap: 20px;
+		align-items: center;
 	}
 
 	/* Título */
 	h1 {
 		color: black;
 		text-align: center;
-		font-size: 2.5rem;
+		font-size: 3rem;
 		font-weight: bold;
 		margin-bottom: 30px;
+		grid-column: 1 / -1;
 	}
 
-	/* Contenedor principal */
-	.container {
-		max-width: 600px;
-		margin: 0 auto;
-		padding: 20px;
-		border-radius: 12px;
-		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
-	}
-
-	/* Contenedor para los botones */
-	.row {
+	.input-section {
 		display: flex;
-		justify-content: center;
-		flex-wrap: wrap;
-		gap: 10px;
+		flex-direction: column;
+		gap: 20px;
 	}
 
-	/* Estilo para los botones */
-	.btn-operation {
-		width: 45%;
-		background-color: #0969da;
-		color: white;
-		font-size: 1.1rem;
-		font-weight: bold;
-		padding: 12px 20px;
-		border: solid 1px black;
-		border-radius: 6px;
-		margin: 5px;
-		cursor: pointer;
-		transition: all 0.3s;
+	.form-group {
+		display: flex;
+		flex-direction: column;
 	}
 
-		/* Efecto hover */
-		.btn-operation:hover {
-			background-color: #0550ae;
-			color: white;
-			transform: scale(1.1); /* Aumento de tamaño */
-		}
+	label {
+		font-size: 1.2rem;
+		margin-bottom: 5px;
+	}
 
-	/* Textarea */
+	/* Textareas */
 	textarea {
 		width: 100%;
-		padding: 12px;
-		border-radius: 6px;
+		min-height: 300px;
+		padding: 16px;
+		font-size: 1rem;
+		line-height: 1.5;
+		color: #333;
+		background-color: #fff;
 		border: 1px solid #ccc;
-		margin-bottom: 15px;
-		font-size: 1.1rem;
-		resize: vertical;
+		border-radius: 8px;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+		resize: none;
 	}
 
-	/* Input for concatenation times */
-	input[type="number"] {
+		textarea:focus {
+			border-color: #66afe9;
+			outline: none;
+			box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
+		}
+
+	/* Número de concatenaciones */
+	#inputTimes {
 		width: 100%;
 		padding: 12px;
+		font-size: 1rem;
 		border-radius: 6px;
 		border: 1px solid #ccc;
-		margin-bottom: 15px;
-		font-size: 1.1rem;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
 
-	.error {
-		color: red;
+		#inputTimes:focus {
+			border-color: #66afe9;
+			outline: none;
+			box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
+		}
+
+	/* Botones */
+	.btn-operation {
+		width: 100%;
+		background-color: #0969da;
+		color: white;
 		font-size: 1rem;
+		font-weight: bold;
+		padding: 12px;
+		border: solid 1px black;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.3s;
+		text-align: center;
+		margin-bottom: 10px; 
+	}
+
+		.btn-operation:hover {
+			background-color: #0550ae;
+			transform: scale(1.1);
+		}
+
+	/* Salida */
+	.output-section {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
 	}
 </style>
 
@@ -94,138 +132,170 @@
 
 <div class="container">
 	<!-- Inputs -->
-	<div class="form-group">
-		<label for="inputText">Texto de Entrada:</label>
-		<textarea id="inputText" @bind="inputText" placeholder="Escribe tu texto aquí..."></textarea>
-	</div>
+	<div class="input-section">
+		<div class="form-group">
+			<label for="inputText">Texto de Entrada:</label>
+			<textarea id="inputText" @bind="inputText" placeholder="Escribe tu texto aquí..."></textarea>
+		</div>
 
-	<div class="form-group">
-		<label for="inputTimes">Número de veces para concatenar:</label>
-		<input type="number" id="inputTimes" @bind="veces" min="1" max="100000" />
-		@if (!esValido)
-		{
-			<p class="error">El número de veces debe ser mayor a 0 y menor o igual a 100000.</p>
-		}
+		<div class="form-group">
+			<label for="inputTimes">Número de concatenaciones:</label>
+			<input type="number" id="inputTimes" @bind="veces" min="1" max="100000" />
+		</div>
 	</div>
 
 	<!-- Botones -->
-	<div class="row">
-		<button class="btn-operation" @onclick='() => RealizarOperacion("contar")'>Contar Caracteres</button>
-		<button class="btn-operation" @onclick='() => RealizarOperacion("mayusculas")'>Pasar a Mayúsculas</button>
-		<button class="btn-operation" @onclick='() => RealizarOperacion("minusculas")'>Pasar a Minúsculas</button>
+	<div class="button-section">
+		<button class="btn-operation" @onclick='() => RealizarOperacion("contar")'>Contar Carácteres</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("mayusculas")'>Mayúsculas</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("minusculas")'>Minúsculas</button>
 		<button class="btn-operation" @onclick='() => RealizarOperacion("repetidas")'>Palabras Repetidas</button>
-		<button class="btn-operation" @onclick='() => RealizarOperacion("reemplazar")'>Reemplazar Palabras</button>
-		<button class="btn-operation" @onclick='() => RealizarOperacion("concatenar")'>Concatenar Texto</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("reemplazar")'>Reemplazar</button>
+		<button class="btn-operation" @onclick='() => RealizarOperacion("concatenar")'>Concatenar</button>
 	</div>
 
 	<!-- Salida -->
-	<div class="form-group">
-		<label for="resultText">Resultado:</label>
-		<textarea id="resultText" readonly>@resultado</textarea>
+	<div class="output-section">
+		<div class="form-group">
+			<label for="resultText">Resultado:</label>
+			<textarea id="resultText" readonly>@resultado</textarea>
+		</div>
 	</div>
 </div>
 
 @code {
-	private string inputText = ""; // Este será el texto ingresado por el usuario
-	private string resultado = "";  // Este será el resultado de la operación
-	private int veces = 1; // El número de veces que se va a concatenar
-	private bool esValido = true; // Valida si el número de veces es correcto
+	// Texto que introduce el usuario
+	private string inputText = "";
+
+	// Resultado de la operación
+	private string resultado = "";  
+
+	// Número de veces para concatenar
+	private int veces = 1; 
+
+	// Variable para validar el número de veces
+	private bool esValido = true; 
 
 	/// <summary>
-	/// Realiza la operación seleccionada.
-	/// Si no hay texto de entrada, usa un valor por defecto.
+	/// Realiza la operación seleccionada por el usuario.
+	/// Si no hay texto ingresado, se usa el valor por defecto.
 	/// </summary>
 	/// <param name="operacion">El tipo de operación a realizar</param>
 	private async Task RealizarOperacion(string operacion)
 	{
-		// Si no hay texto ingresado, usar el texto por defecto
+		// Si no hay texto se usar el texto por defecto
 		if (string.IsNullOrWhiteSpace(inputText))
 		{
-			inputText = "Proconsi es una empresa de Tecnologías de la Información y la Comunicación especializada en el desarrollo e integración de soluciones informáticas para todo tipo de empresas. Más de tres décadas de experiencia avalan a una compañía tan flexible como responsable. Cuenta con un equipo multidisciplinar de más de 120 profesionales cualificados, expertos y comprometidos con un único objetivo: hallar la solución tecnológica exacta para cada cliente. Proconsi es especialista en la creación y el desarrollo de software de gestión, consultoría tecnológica, dirección y gestión de proyectos I+D+i basados en TIC, soporte técnico, aplicaciones móviles y fomento de tendencias en nuevas tecnologías, como el cloud computing."; // Texto por defecto
+			inputText = "Proconsi es una empresa de Tecnologías de la Información y la Comunicación especializada en el desarrollo e integración de soluciones informáticas para todo tipo de empresas. Más de tres décadas de experiencia avalan a una compañía tan flexible como responsable. Cuenta con un equipo multidisciplinar de más de 120 profesionales cualificados, expertos y comprometidos con un único objetivo: hallar la solución tecnológica exacta para cada cliente. Proconsi es especialista en la creación y el desarrollo de software de gestión, consultoría tecnológica, dirección y gestión de proyectos I+D+i basados en TIC, soporte técnico, aplicaciones móviles y fomento de tendencias en nuevas tecnologías, como el cloud computing.";
 		}
 
-		// Validar la concatenación solo si la operación es "concatenar"
+		// Valido el número de concatenaciones en la operación de concatenar solo
 		if (operacion == "concatenar" && (veces <= 0 || veces > 100000))
 		{
-			esValido = false;
-			return;  // Si no es válido, no hacemos nada
+			// En caso de que se introduzca un valor no permitido
+			await Swal.FireAsync("Error", "El número de veces debe ser mayor a 0 y menor o igual a 100000.", SweetAlertIcon.Error);
+			return;  
 		}
-		esValido = true;
 
-		// Construyo la URL para la API dependiendo de la operación
+		// Construyo la URL de la API dependiendo de la operación
 		string url = $"https://localhost:7123/api/texto/{operacion}";
 
-		// Realizo la solicitud POST a la API dependiendo de la operación
+		// Ejecutar la operación dependiendo del tipo
 		switch (operacion)
 		{
 			case "concatenar":
+				// Para concatenar, necesito enviar el texto y el número de veces
 				var concatenarRequest = new { Texto = inputText, Veces = veces };
-				await PostOperacion(url, concatenarRequest);
+				await HacerPeticion(url, concatenarRequest);
 				break;
 
 			default:
-				await PostOperacion(url, inputText);
+				// Para el resto de operaciones solo necesito el texto
+				await HacerPeticion(url, inputText);
 				break;
 		}
 	}
 
 	/// <summary>
-	/// Realiza la solicitud POST a la API y obtiene el resultado de la operación.
+	/// Realiza una petición a la API y obtiene el resultado de la operación.
 	/// </summary>
-	/// <param name="url">La URL de la API para la operación deseada.</param>
-	/// <param name="data">El texto a enviar en el cuerpo de la solicitud.</param>
-	private async Task PostOperacion(string url, object data)
+	/// <param name="url">URL de la API a la que se hará la solicitud</param>
+	/// <param name="data">El texto o datos a enviar en el cuerpo de la solicitud</param>
+	private async Task HacerPeticion(string url, object data)
 	{
 		try
 		{
-			// Hacer la solicitud POST a la API
-			var response = await Http.PostAsJsonAsync(url, data);
+			// Hago la petición a la API
+			var respuesta = await Http.PostAsJsonAsync(url, data);
 
-			// Verificar si la solicitud fue exitosa
-			if (response.IsSuccessStatusCode)
+			// Si fue exitosa la respuesta
+			if (respuesta.IsSuccessStatusCode)
 			{
-				// Obtener el resultado de la respuesta
-				var respuestaJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+				// Leo el JSON
+				var respuestaJson = await respuesta.Content.ReadFromJsonAsync<JsonElement>();
 
-				// Dependiendo de la operación, obtener el valor correspondiente
+				// Dependiendo de la operación, se obtiene la respuesta correspondiente
 				if (respuestaJson.TryGetProperty("tiempoConcatenacion", out var tiempoConcatenacion) &&
 					respuestaJson.TryGetProperty("longitudTexto", out var longitudTexto))
 				{
-					resultado = $"Tiempo de concatenación: {tiempoConcatenacion}, Longitud del texto concatenado: {longitudTexto}";
+					// Concatenación
+					resultado = $"Tiempo de concatenación: {tiempoConcatenacion}{Environment.NewLine}Longitud del texto concatenado (carácteres): {longitudTexto}";
 				}
 				else if (respuestaJson.TryGetProperty("caracteres", out var caracteres))
 				{
-					resultado = $"Cantidad de caracteres: {caracteres}";
+					// Contar carácteres
+					resultado = $"Carácteres: {caracteres}.";
 				}
 				else if (respuestaJson.TryGetProperty("textoConvertido", out var textoConvertido))
 				{
+					// Pasar a mayúsculas o a minúsculas
 					resultado = $"{textoConvertido}";
 				}
 				else if (respuestaJson.TryGetProperty("palabrasRepetidas", out var palabrasRepetidas))
 				{
-					resultado = $"Palabras repetidas: {palabrasRepetidas}";
+					// Deserializo las palabras repetidas
+					var palabrasRepetidasDict = JsonSerializer.Deserialize<Dictionary<string, int>>(palabrasRepetidas.ToString());
+
+					// Valido que haya palabras repetidas
+					if (palabrasRepetidasDict != null && palabrasRepetidasDict.Any())
+					{
+						var resultadoRepetidas = new StringBuilder();
+
+						// Creo una lista con las palabras repetidas para formatear la salida
+						foreach (var palabra in palabrasRepetidasDict)
+						{
+							resultadoRepetidas.AppendLine($"- {palabra.Key}: {palabra.Value} veces");
+						}
+
+						resultado = resultadoRepetidas.ToString();
+					}
+					else
+					{
+						// Si no hay palabras repetidas
+						resultado = "No hay palabras repetidas.";
+					}
 				}
 				else if (respuestaJson.TryGetProperty("textoReemplazado", out var textoReemplazado))
 				{
-					resultado = $"Texto reemplazado: {textoReemplazado}";
+					// Reemplazar el texto
+					resultado = $"Texto modificado:{Environment.NewLine}{textoReemplazado}";
 				}
 				else
 				{
-					resultado = "Error al procesar la operación.";
+					// Sino hay propiedad o hubo un error
+					await Swal.FireAsync("Error", "Error en la respuesta de la operación.", SweetAlertIcon.Error);
 				}
 			}
-			// En caso de error de la solicitud
 			else
 			{
-				resultado = "Error en la solicitud a la API.";
+				// Si la solicitud falla
+				await Swal.FireAsync("Error", "Error en la conexión con el servidor.", SweetAlertIcon.Error);
 			}
 		}
 		catch (Exception ex)
 		{
-			resultado = $"Error: {ex.Message}";
+			// Manejo de excepciones
+			await Swal.FireAsync("Error", ex.Message, SweetAlertIcon.Error);
 		}
 	}
 }
-
-
-

@@ -371,7 +371,7 @@
 			}
 			catch (Exception ex)
 			{
-				await Swal.FireAsync("Error", ex.StackTrace, SweetAlertIcon.Error);
+				await Swal.FireAsync("Error", ex.Message, SweetAlertIcon.Error);
 			}
 			// Reinicio para la siguiente operación
 			primerOperando = operadorActual = null;
