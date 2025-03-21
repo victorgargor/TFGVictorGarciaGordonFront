@@ -1,115 +1,134 @@
 ﻿@page "/fecha"
 @using System.Text.Json
 @inject HttpClient Http
+@inject SweetAlertService Swal
 
 <PageTitle>Operaciones con Fechas</PageTitle>
 
 <style>
-    /* Estilos globales */
-    body {
-        font-family: 'Poppins', sans-serif;
-        background-color: #f6f8fa;
-        color: #24292f;
-        margin: 0;
-        padding: 20px;
-        overflow: hidden;
-    }
+	/* Estilos globales */
+	body {
+		font-family: 'Poppins', sans-serif;
+		background-color: #f6f8fa;
+		color: #24292f;
+		margin: 0;
+		padding: 20px;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		justify-content: center; 
+		overflow: hidden;
+	}
 
-    /* Título */
-    h1 {
-        color: black;
-        text-align: center;
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin-bottom: 30px;
-    }
+	/* Contenedor principal */
+	.container {
+		max-width: 1400px;
+		width: 90%;
+		margin: auto;
+		padding: 20px;
+		margin-top: 100px;
+		border-radius: 12px;
+		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 20px;
+		align-items: center;
+	}
 
-    /* Contenedor principal */
-    .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
-    }
+	/* Título */
+	h1 {
+		color: black;
+		text-align: center;
+		font-size: 3rem;
+		font-weight: bold;
+		margin-bottom: 30px;
+	}
 
-    /* Contenedor para los botones */
-    .row {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
+	/* Sección de inputs */
+	.input-section {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 20px;
+	}
 
-    /* Estilo para los botones */
-    .btn-operation {
-        width: 45%;
-        background-color: #0969da;
-        color: white;
-        font-size: 1.1rem;
-        font-weight: bold;
-        padding: 12px 20px;
-        border: solid 1px black;
-        border-radius: 6px;
-        margin: 5px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
+	.input-section input {
+		padding: 12px;
+		font-size: 1rem;
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+	}
 
-    /* Efecto hover */
-    .btn-operation:hover {
-        background-color: #0550ae;
-        color: white;
-        transform: scale(1.1); /* Aumento de tamaño */
-    }
+	.input-section input:focus {
+		border-color: #66afe9;
+		outline: none;
+		box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
+	}
 
-    /* Textarea */
-    textarea {
-        width: 100%;
-        min-height: 150px;
-        padding: 12px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        margin-bottom: 15px;
-        font-size: 1.1rem;
-        resize: vertical;
-    }
+	/* Sección de botones */
+	.buttons-section {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 20px;
+	}
 
-    /* Input for concatenation times */
-    input[type="number"] {
-        width: 100%;
-        padding: 12px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        margin-bottom: 15px;
-        font-size: 1.1rem;
-    }
+	.btn-operation {
+		background-color: #0969da;
+		color: white;
+		font-size: 1rem;
+		font-weight: bold;
+		padding: 12px;
+		border: solid 1px black;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.3s;
+		text-align: center;
+	}
 
-    .error {
-        color: red;
-        font-size: 1rem;
-    }
+	.btn-operation:hover {
+		background-color: #0550ae;
+		transform: scale(1.05);
+	}
+
+	/* Sección de salida */
+	.output-section {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	textarea {
+		width: 100%;
+		min-height: 300px;
+		padding: 16px;
+		font-size: 1rem;
+		line-height: 1.5;
+		color: #333;
+		background-color: #fff;
+		border: 1px solid #ccc;
+		border-radius: 8px;
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+		resize: none;
+	}
+
+	textarea:focus {
+		border-color: #66afe9;
+		outline: none;
+		box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
+	}
 </style>
 
 <h1>Operaciones con Fechas</h1>
 
 <div class="container">
-    <!-- Entrada para la primera fecha -->
-    <div class="row">
-        <div class="col-12 text-center">
-            <input @bind="fecha1" type="text" placeholder="Ingrese la primera fecha (yyyy/MM/dd)" class="form-control mb-3" />
-        </div>
+    <!-- Inputs -->
+    <div class="input-section">
+        <input @bind="fecha1" type="text" placeholder="Ingrese la primera fecha (yyyy/MM/dd)" />
+        <input @bind="fecha2" type="text" placeholder="Ingrese la segunda fecha (yyyy/MM/dd)" />
     </div>
 
-    <!-- Entrada para la segunda fecha -->
-    <div class="row">
-        <div class="col-12 text-center">
-            <input @bind="fecha2" type="text" placeholder="Ingrese la segunda fecha (yyyy/MM/dd)" class="form-control mb-3" />
-        </div>
-    </div>
-
-    <!-- Botones de operaciones -->
-    <div class="row">
+    <!-- Botones -->
+    <div class="buttons-section">
         <button class="btn-operation" @onclick='() => RealizarOperacion("diferencia")'>Calcular Diferencia</button>
         <button class="btn-operation" @onclick='() => RealizarOperacion("inicio-fin")'>Inicio y Fin del Año</button>
         <button class="btn-operation" @onclick='() => RealizarOperacion("dias")'>Mostrar Días del Año</button>
@@ -117,20 +136,10 @@
     </div>
 
     <!-- Salida -->
-    <div class="form-group">
+    <div class="output-section">
         <label for="resultText">Resultado:</label>
         <textarea id="resultText" readonly @bind="resultado"></textarea>
     </div>
-
-    <!-- Mensaje de error -->
-    @if (!string.IsNullOrEmpty(error))
-    {
-        <div class="row">
-            <div class="col-12 text-center">
-                <p class="error">@error</p>
-            </div>
-        </div>
-    }
 </div>
 
 @code {
@@ -138,9 +147,8 @@
     private string? fecha1;
     private string? fecha2;
 
-    // Variables para almacenar los resultados y los errores
+    // Variable para almacenar el resultado
     private string? resultado;
-    private string? error;
 
     /// <summary>
     /// Método general para realizar la operación seleccionada con las fechas ingresadas.
@@ -149,18 +157,15 @@
     /// <returns>Tarea asincrónica.</returns>
     private async Task RealizarOperacion(string operacion)
     {
-        // Validación de fechas
+        // Valido que se hayan ingresado las dos fechas
         if (string.IsNullOrWhiteSpace(fecha1) || string.IsNullOrWhiteSpace(fecha2))
         {
-            error = "Por favor, ingrese ambas fechas.";
+            await Swal.FireAsync("Error", "Por favor, ingrese ambas fechas.", SweetAlertIcon.Error);
             resultado = null;
             return;
         }
 
-        // Limpiar cualquier error previo
-        error = null;
-
-        // Crear el objeto para enviar en la solicitud (FechasRequest)
+        // Creo el objeto para enviar en la solicitud (FechasRequest)
         var fechasRequest = new
         {
             Fecha1 = fecha1,
@@ -175,7 +180,6 @@
         {
             var response = await Http.PostAsJsonAsync(url, fechasRequest);
 
-            // Si la respuesta es exitosa, se procesa el resultado
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -183,14 +187,15 @@
             }
             else
             {
-                error = "Error el formato admitido es yyyy/MM/dd o la fecha seleccionada no está admitida";
+				// Si la fecha no es correcta o el formato
+				await Swal.FireAsync("Error", "El formato admitido es yyyy/MM/dd o la fecha seleccionada no está admitida.", SweetAlertIcon.Error);
                 resultado = null;
             }
         }
         catch (Exception ex)
         {
-            // En caso de error
-            error = $"Ocurrió un error: {ex.Message}";
+			// Manejo de excepciones
+            await Swal.FireAsync("Error", $"{ex.Message}", SweetAlertIcon.Error);
             resultado = null;
         }
     }
