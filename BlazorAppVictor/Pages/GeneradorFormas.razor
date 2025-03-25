@@ -1,9 +1,10 @@
-﻿@page "/formas"  
-@using System.Text.Json           
-@using System.Net.Http.Json       
-@inject HttpClient Http         
+﻿@page "/formas"
+@using System.Text.Json
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject SweetAlertService Swal
 
-<PageTitle>Formas</PageTitle>    
+<PageTitle>Formas</PageTitle>
 
 <style>
 	/* Estilos globales */
@@ -20,7 +21,7 @@
 		overflow: hidden;
 	}
 
-	/* Estilo para el título principal */
+	/* Título */
 	h3 {
 		color: black;
 		text-align: center;
@@ -28,16 +29,16 @@
 		font-weight: bold;
 		margin-top: 30px;
 		margin-bottom: 30px;
-		grid-column: 1 / -1
+		grid-column: 1 / -1;
 	}
 
 	/* Estilo para el contenedor principal */
 	.container {
 		width: 800px;
-		height: 400px;
+		height: auto;
 		margin: auto;
 		padding: 20px;
-		margin-top: 100px;
+		margin-top: 50px;
 		border-radius: 12px;
 		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
 	}
@@ -50,7 +51,7 @@
 		gap: 10px;
 	}
 
-	/* Estilo para el botón */
+	/* Botones */
 	.btn-operation {
 		width: 20%;
 		background-color: #0969da;
@@ -80,7 +81,7 @@
 		text-align: center;
 	}
 
-		/* Estilo para los labels  */
+		/* Estilo para los labels */
 		.form-group label {
 			display: block;
 			margin-bottom: 5px;
@@ -98,29 +99,30 @@
 	}
 
 	input[type=number]:focus {
-			border-color: #66afe9;
-			outline: none;
-			box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
+		border-color: #66afe9;
+		outline: none;
+		box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
 	}
 
 	/* Estilo para el resultado */
 	.resultado {
-		/* Permite conservar saltos de línea */
-		white-space: pre-wrap; 
-		background-color: #f0f0f0;
-		padding: 12px;
-		border-radius: 6px;
+		white-space: pre-wrap;
+		background-color: #ffffff;
+		padding: 15px;
+		border-radius: 8px;
 		border: 1px solid #ccc;
-		margin-top: 30px;
+		margin-top: 15px; 
 		font-size: 1rem;
-		height: 150px; 
+		height: 225px;
 		overflow-y: auto;
+		font-family: 'Courier New', Courier, monospace;
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	}
 </style>
 
 <h3>Generar Formas</h3>
 
-<!-- Contenedor principal  -->
+<!-- Contenedor principal -->
 <div class="container">
 	<!-- Inputs -->
 	<div class="form-group">
@@ -138,24 +140,15 @@
 		<input id="inputTriangulos" type="number" placeholder="Cantidad de Triángulos" @bind="cantidadTriangulos" min="0" />
 	</div>
 
-	<!-- Botón -->
+	<!-- Botones -->
 	<div class="row">
 		<button class="btn-operation" @onclick="GenerarFormas">Generar</button>
 	</div>
 
-	<!-- Errores -->
-	@if (!string.IsNullOrEmpty(error))
-	{
-		<p class="error">@error</p>
-	}
-
 	<!-- Salida -->
-	@if (!string.IsNullOrEmpty(resultadoHTML))
-	{
-		<div class="resultado">
-			@((MarkupString)resultadoHTML) 
-		</div>
-	}
+	<div class="resultado">
+		<pre>@resultadoHTML</pre>
+	</div>
 </div>
 
 @code {
@@ -168,10 +161,8 @@
 
 	// Resultado en bruto obtenido de la API
 	private string resultado = "";
-	// Resultado procesado en HTML
+	// Resultado procesado en HTML (formateado)
 	private string resultadoHTML = "";
-	// Mensaje de error 
-	private string error = "";
 
 	/// <summary>
 	/// Método asíncrono para enviar la solicitud a la API y generar las formas.
@@ -180,22 +171,21 @@
 	private async Task GenerarFormas()
 	{
 		// Reiniciar mensajes y estado de carga antes de procesar la solicitud
-		error = "";
 		resultado = "";
 		resultadoHTML = "";
 
 		// Valido que las cantidades no sean negativas (aunque el input impide valores negativos)
 		if (cantidadCirculos < 0 || cantidadCuadrados < 0 || cantidadTriangulos < 0)
 		{
-			error = "Las cantidades no pueden ser negativas.";
-			return; 
+			await Swal.FireAsync("Error", "Las cantidades no pueden ser negativas.", SweetAlertIcon.Error);
+			return;
 		}
 
 		// Valido que al menos se haya ingresado una forma
 		if (cantidadCirculos == 0 && cantidadCuadrados == 0 && cantidadTriangulos == 0)
 		{
-			error = "Debe ingresar al menos una forma para generar.";
-			return; 
+			await Swal.FireAsync("Error", "Debe ingresar al menos una forma para generar.", SweetAlertIcon.Error);
+			return;
 		}
 
 		try
@@ -211,29 +201,25 @@
 			// Se envía la solicitud a la API con la URL indicada
 			var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/formas", solicitudFormas);
 
-			
 			if (respuesta.IsSuccessStatusCode)
 			{
-				// Si la respuesta es exitosa, leo el contenido como cadena de texto
+				// Leo el contenido como cadena de texto
 				resultado = await respuesta.Content.ReadAsStringAsync();
-				
-				// Para formatear la salida
-				resultadoHTML = resultado
-					.Replace("Círculo:", "<span class='titulo-propiedad'>Círculo:</span>")
-					.Replace("Cuadrado:", "<span class='titulo-propiedad'>Cuadrado:</span>")
-					.Replace("Triángulo:", "<span class='titulo-propiedad'>Triángulo:</span>");
+
+				// Parseo el JSON y lo vuelvo a serializar con indentación para formatearlo
+				using var doc = JsonDocument.Parse(resultado);
+				resultadoHTML = JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
 			}
 			else
 			{
-				// Si hay errores 
-				error = $"Error: {respuesta.ReasonPhrase}";
+				await Swal.FireAsync("Error", respuesta.ReasonPhrase, SweetAlertIcon.Error);
 			}
 		}
 		catch (Exception ex)
 		{
-			// Manejo las excepciones
-			error = $"Excepción: {ex.Message}";
+			await Swal.FireAsync("Error", ex.Message, SweetAlertIcon.Error);
 		}
 	}
 }
+
 
