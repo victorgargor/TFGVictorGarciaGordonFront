@@ -20,7 +20,6 @@
 		justify-content: center;
 		overflow: hidden;
 	}
-
 	/* Título */
 	h3 {
 		color: black;
@@ -31,8 +30,7 @@
 		margin-bottom: 30px;
 		grid-column: 1 / -1;
 	}
-
-	/* Estilo para el contenedor principal */
+	/* Contenedor principal */
 	.container {
 		width: 800px;
 		height: auto;
@@ -42,7 +40,6 @@
 		border-radius: 12px;
 		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
 	}
-
 	/* Contenedor para los botones */
 	.row {
 		display: flex;
@@ -50,7 +47,6 @@
 		flex-wrap: wrap;
 		gap: 10px;
 	}
-
 	/* Botones */
 	.btn-operation {
 		width: 20%;
@@ -67,28 +63,24 @@
 		transition: all 0.3s;
 	}
 
-		/* Efecto hover para el botón */
 		.btn-operation:hover {
 			background-color: #0550ae;
 			color: white;
 			transform: scale(1.1);
 		}
-
-	/* Estilo para los grupos de formulario (cada input con su label) */
+	/* Estilos para los grupos de formulario */
 	.form-group {
 		margin-top: 10px;
 		margin-bottom: 15px;
 		text-align: center;
 	}
 
-		/* Estilo para los labels */
 		.form-group label {
 			display: block;
 			margin-bottom: 5px;
 			font-weight: bold;
 		}
 
-	/* Estilo para los inputs de tipo número */
 	input[type="number"] {
 		width: 50%;
 		padding: 12px;
@@ -103,7 +95,6 @@
 		outline: none;
 		box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
 	}
-
 	/* Estilo para el resultado */
 	.resultado {
 		white-space: pre-wrap;
@@ -111,7 +102,7 @@
 		padding: 15px;
 		border-radius: 8px;
 		border: 1px solid #ccc;
-		margin-top: 15px; 
+		margin-top: 15px;
 		font-size: 1rem;
 		height: 225px;
 		overflow-y: auto;
@@ -154,34 +145,34 @@
 @code {
 	// Cantidad de Círculos ingresada
 	private int cantidadCirculos;
+
 	// Cantidad de Cuadrados ingresada
 	private int cantidadCuadrados;
+
 	// Cantidad de Triángulos ingresada
 	private int cantidadTriangulos;
 
-	// Resultado en bruto obtenido de la API
+	// Resultado bruto de la API
 	private string resultado = "";
-	// Resultado procesado en HTML (formateado)
+	// Resultado procesado 
 	private string resultadoHTML = "";
 
 	/// <summary>
-	/// Método asíncrono para enviar la solicitud a la API y generar las formas.
-	/// Realiza validaciones previas similares a las del controlador.
+	/// Envía la solicitud a la API, procesa la respuesta y genera un reporte legible.
 	/// </summary>
 	private async Task GenerarFormas()
 	{
-		// Reiniciar mensajes y estado de carga antes de procesar la solicitud
+		// Limpio todo
 		resultado = "";
 		resultadoHTML = "";
 
-		// Valido que las cantidades no sean negativas (aunque el input impide valores negativos)
+		// Valido la entrada
 		if (cantidadCirculos < 0 || cantidadCuadrados < 0 || cantidadTriangulos < 0)
 		{
 			await Swal.FireAsync("Error", "Las cantidades no pueden ser negativas.", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Valido que al menos se haya ingresado una forma
 		if (cantidadCirculos == 0 && cantidadCuadrados == 0 && cantidadTriangulos == 0)
 		{
 			await Swal.FireAsync("Error", "Debe ingresar al menos una forma para generar.", SweetAlertIcon.Error);
@@ -190,7 +181,7 @@
 
 		try
 		{
-			// Se crea un objeto con las cantidades ingresadas
+			// Creo el objeto para hacer la solicitud
 			var solicitudFormas = new
 			{
 				Circulos = cantidadCirculos,
@@ -198,17 +189,138 @@
 				Triangulos = cantidadTriangulos
 			};
 
-			// Se envía la solicitud a la API con la URL indicada
+			// Envio la solicitud a la API
 			var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/formas", solicitudFormas);
 
 			if (respuesta.IsSuccessStatusCode)
 			{
-				// Leo el contenido como cadena de texto
+				// Leeo la respuesta
 				resultado = await respuesta.Content.ReadAsStringAsync();
 
-				// Parseo el JSON y lo vuelvo a serializar con indentación para formatearlo
+				// Proceso el JSON y construir la respuesta legible
 				using var doc = JsonDocument.Parse(resultado);
-				resultadoHTML = JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+				var root = doc.RootElement;
+				var sb = new System.Text.StringBuilder();
+
+				// Mostrar todas las formas
+				sb.AppendLine("=== Información de Todas las Formas ===");
+				sb.AppendLine();
+
+				if (root.TryGetProperty("todasLasFormas", out JsonElement todasLasFormas))
+				{
+					foreach (var forma in todasLasFormas.EnumerateArray())
+					{
+						var tipo = forma.GetProperty("tipo").GetString();
+						var color = forma.GetProperty("color").GetString();
+						var centro = forma.GetProperty("centro");
+						var x = centro.GetProperty("x").GetInt32();
+						var y = centro.GetProperty("y").GetInt32();
+						var area = forma.GetProperty("area").ToString();
+						var propiedades = forma.GetProperty("propiedades").GetString();
+
+						sb.AppendLine($"Tipo: {tipo}");
+						sb.AppendLine($"Color: {color}");
+						sb.AppendLine($"Centro: ({x}, {y})");
+						sb.AppendLine($"Área: {area}");
+						sb.AppendLine($"Propiedades: {propiedades}");
+						sb.AppendLine(new string('-', 40));
+					}
+				}
+
+				// Mostras las formas agrupadas
+				if (root.TryGetProperty("agrupadas", out JsonElement agrupadas))
+				{
+					sb.AppendLine();
+					sb.AppendLine("=== Formas Agrupadas ===");
+					sb.AppendLine();
+
+					// Círculos agrupados
+					if (agrupadas.TryGetProperty("circulos", out JsonElement circulos))
+					{
+						sb.AppendLine("Círculos:");
+						foreach (var circulo in circulos.EnumerateArray())
+						{
+							// Suponiendo que cada círculo tenga 'radio', 'color', 'centro' y 'area'
+							var radio = circulo.TryGetProperty("radio", out JsonElement radioElem) ? radioElem.ToString() : "N/A";
+							var colorCirculo = circulo.GetProperty("color").GetString();
+							var centroCirculo = circulo.GetProperty("centro");
+							var xC = centroCirculo.GetProperty("x").GetInt32();
+							var yC = centroCirculo.GetProperty("y").GetInt32();
+							var areaCirculo = circulo.GetProperty("area").ToString();
+
+							sb.AppendLine($"  Radio: {radio}, Color: {colorCirculo}, Centro: ({xC}, {yC}), Área: {areaCirculo}");
+						}
+						sb.AppendLine(new string('-', 40));
+					}
+
+					// Cuadrados agrupados
+					if (agrupadas.TryGetProperty("cuadrados", out JsonElement cuadrados))
+					{
+						sb.AppendLine("Cuadrados:");
+						foreach (var cuadrado in cuadrados.EnumerateArray())
+						{
+							var lado = cuadrado.GetProperty("lado").ToString();
+							var colorCuadrado = cuadrado.GetProperty("color").GetString();
+							var centroCuadrado = cuadrado.GetProperty("centro");
+							var xC = centroCuadrado.GetProperty("x").GetInt32();
+							var yC = centroCuadrado.GetProperty("y").GetInt32();
+							var areaCuadrado = cuadrado.GetProperty("area").ToString();
+
+							sb.AppendLine($"  Lado: {lado}, Color: {colorCuadrado}, Centro: ({xC}, {yC}), Área: {areaCuadrado}");
+						}
+						sb.AppendLine(new string('-', 40));
+					}
+
+					// Triángulos agrupados (incluyendo desplazamiento y todos los ángulos)
+					if (agrupadas.TryGetProperty("triangulos", out JsonElement triangulos))
+					{
+						sb.AppendLine("Triángulos:");
+						foreach (var triangulo in triangulos.EnumerateArray())
+						{
+							var baseTri = triangulo.GetProperty("base").ToString();
+							var altura = triangulo.GetProperty("altura").ToString();
+							var colorTri = triangulo.GetProperty("color").GetString();
+							var centroTri = triangulo.GetProperty("centro");
+							var xT = centroTri.GetProperty("x").GetInt32();
+							var yT = centroTri.GetProperty("y").GetInt32();
+							var areaTri = triangulo.GetProperty("area").ToString();
+
+							// Extraer desplazamiento y todos los ángulos desde la cadena 'propiedades'
+							string desplazamiento = "N/A";
+							string angulos = "N/A";
+							if (triangulo.TryGetProperty("propiedades", out JsonElement propElem))
+							{
+								string propStr = propElem.GetString();
+								// Desplazamiento
+								int idxDes = propStr.IndexOf("Desplazamiento:");
+								if (idxDes >= 0)
+								{
+									int start = idxDes + "Desplazamiento:".Length;
+									int end = propStr.IndexOf(",", start);
+									if (end < 0) end = propStr.Length;
+									desplazamiento = propStr.Substring(start, end - start).Trim();
+								}
+								// Extraer todos los ángulos hasta ", Color:"
+								int idxAng = propStr.IndexOf("Ángulos:");
+								if (idxAng >= 0)
+								{
+									int start = idxAng + "Ángulos:".Length;
+									int end = propStr.IndexOf(", Color:", start);
+									if (end < 0) end = propStr.Length;
+									angulos = propStr.Substring(start, end - start).Trim();
+								}
+							}
+
+							sb.AppendLine($"  Base: {baseTri}, Altura: {altura}, Color: {colorTri}");
+							sb.AppendLine($"  Centro: ({xT}, {yT}), Área: {areaTri}");
+							sb.AppendLine($"  Desplazamiento: {desplazamiento}, Ángulos: {angulos}");
+							sb.AppendLine(new string('-', 40));
+						}
+					}
+				}
+
+				// Asignar el reporte final a la variable de salida
+				resultadoHTML = sb.ToString();
 			}
 			else
 			{

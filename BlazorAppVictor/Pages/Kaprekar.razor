@@ -1,8 +1,9 @@
-﻿@page "/kaprekar"  
-@using System.Text.Json  
-@inject HttpClient Http 
+﻿@page "/kaprekar"
+@using System.Text.Json
+@inject HttpClient Http
+@inject SweetAlertService Swal
 
-<PageTitle>Kaprekar</PageTitle>  
+<PageTitle>Kaprekar</PageTitle>
 
 <style>
 	/* Estilos globales */
@@ -19,41 +20,61 @@
 	h3 {
 		color: black;
 		text-align: center;
-		font-size: 2.5rem;
+		font-size: 3rem;
 		font-weight: bold;
+		margin-top: 30px;
 		margin-bottom: 30px;
+		grid-column: 1 / -1;
 	}
 
 	/* Contenedor principal */
 	.container {
-		max-width: 600px;
-		margin: 0 auto;
+		width: 100%;
+		margin: auto;
 		padding: 20px;
+		margin-top: 100px;
 		border-radius: 12px;
 		box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
-		background: white;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 20px;
+		align-items: start;
 	}
 
-	/* Contenedor para los botones */
+	/* Contenedor para introducir los datos  */
 	.row {
+		background-color: #fff;
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		padding: 15px;
+		margin-left: 3px;
+		width: 100%;
+		height: 200px; 
 		display: flex;
+		flex-direction: column;
+		align-items: center;
 		justify-content: center;
-		flex-wrap: wrap;
-		gap: 10px;
-		margin-bottom: 15px; 
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 	}
 
-	/* Input de texto */
+	/* Salida */
+	.resultados p {
+		visibility: @(numeroKaprekar.HasValue ? "visible" : "hidden");
+		margin-right: 5px;
+	}
+
+
+	/* Inputs */
 	input[type="text"] {
 		width: 80%;
-		padding: 14px; 
+		padding: 14px;
 		border-radius: 6px;
 		border: 1px solid #ccc;
 		font-size: 1.1rem;
 		margin-top: 20px;
 	}
 
-	/* Botón */
+	/* Botones */
 	.btn-operation {
 		width: 45%;
 		background-color: #0969da;
@@ -63,24 +84,15 @@
 		padding: 12px 20px;
 		border: solid 1px black;
 		border-radius: 6px;
-		margin: 5px;
+		margin-top: 20px;
 		cursor: pointer;
 		transition: all 0.3s;
 	}
 
-		/* Efecto hover */
 		.btn-operation:hover {
 			background-color: #0550ae;
 			transform: scale(1.1);
 		}
-
-	/* Mensaje de error */
-	.error {
-		color: red;
-		font-size: 1rem;
-		margin-top: 10px; 
-		text-align: center;
-	}
 </style>
 
 <h3>Kaprekar</h3>
@@ -92,41 +104,36 @@
 		<button class="btn-operation" @onclick="VerificarKaprekar">Verificar</button> <!-- Botón que ejecuta la verificación -->
 	</div>
 
-	<!-- Errores -->
-	@if (!string.IsNullOrEmpty(error))
-	{
-		<div class="row">
-			<p class="error">@error</p>
-		</div>
-	}
-
-	<!--Salida -->
-	@if (esKaprekar != null)
-	{
-		<div class="row">
-			<p>Número: @numeroKaprekar</p>
-			<p>¿Es Kaprekar?: @(esKaprekar == true ? "Sí" : "No")</p>
-			<p>Número de operaciones: @operacionesKaprekar</p>
-		</div>
-	}
+	<!-- Salida -->
+	<div class="row resultados">
+		<p>Número: @numeroKaprekar</p>
+		<p>¿Es Kaprekar?: @(esKaprekar == true ? "Sí" : "No")</p>
+		<p>Número de operaciones: @operacionesKaprekar</p>
+	</div>
 </div>
 
 @code {
-	private string numeroTexto = ""; // Entrada del usuario
-	private int? numeroKaprekar;  // Almacena el número 
-	private bool? esKaprekar;  // Indica si el número es de Kaprekar o no
-	private int? operacionesKaprekar;  // Cantidad de operaciones realizadas en la verificación
-	private string? error;  // Para el mensaje de error
+	// Entrada del usuario
+	private string numeroTexto = ""; 
+
+	// Para almacenar el número
+	private int? numeroKaprekar;  
+
+	// Para indica si el número es o no Kaprekar
+	private bool? esKaprekar;  
+
+	// Número de operaciones para saber si es Kaprekar o no el número
+	private int? operacionesKaprekar;
 
 	/// <summary>
 	/// Verifica si el número ingresado es de Kaprekar
 	/// </summary>
 	private async Task VerificarKaprekar()
 	{
-		// Valido la entrada para que el valor ingresado sea un número entero válido
-		if (!int.TryParse(numeroTexto, out int numero))
+		// Valido la entrada para que el valor ingresado sea un número entero con las características que yo quiero
+		if (!int.TryParse(numeroTexto, out int numero) || numero < 0)
 		{
-			error = "Por favor, introduce un número entero válido.";
+			await Swal.FireAsync("Error", "El parámetro proporcionado debe de ser un número entero positivo (máximo 9 dígitos).", SweetAlertIcon.Error);
 			numeroKaprekar = null;
 			esKaprekar = null;
 			operacionesKaprekar = null;
@@ -142,7 +149,7 @@
 			var response = await Http.GetAsync(url);
 
 			// Lanzo una excepción si la respuesta no es exitosa
-			response.EnsureSuccessStatusCode(); 
+			response.EnsureSuccessStatusCode();
 
 			// Obtiene la respuesta JSON
 			var jsonResponse = await response.Content.ReadAsStringAsync();
@@ -159,14 +166,12 @@
 				numeroKaprekar = kaprekar.Numero;
 				esKaprekar = kaprekar.EsKaprekar;
 				operacionesKaprekar = kaprekar.Operaciones;
-				// Limpio cualquier mensaje de error anterior
-				error = string.Empty; 
 			}
 		}
 		catch (Exception ex)
 		{
-			// En caso de errores con la API
-			error = "Ocurrió un error al verificar el número Kaprekar: " + ex.Message;
+			// Manejo de excepciones
+			await Swal.FireAsync("Error", "Ocurrió un error al verificar el número Kaprekar: " + ex.Message, SweetAlertIcon.Error);
 			numeroKaprekar = null;
 			esKaprekar = null;
 			operacionesKaprekar = null;
