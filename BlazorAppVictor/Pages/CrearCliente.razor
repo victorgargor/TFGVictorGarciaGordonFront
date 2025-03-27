@@ -1,0 +1,105 @@
+﻿@page "/crear-cliente"
+@using BlazorAppVictor.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject SweetAlertService Swal
+@inject NavigationManager Navegador
+
+<h3>Crear Cliente</h3>
+
+<!-- Botón Volver -->
+<button class="btn btn-secondary mb-3" @onclick="Volver">Volver</button>
+
+<EditForm Model="cliente" OnValidSubmit="EnviarCliente">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="DNI" class="form-label">DNI</label>
+        <InputText id="DNI" class="form-control" @bind-Value="cliente.DNI" />
+    </div>
+
+    <div class="mb-3">
+        <label for="Nombre" class="form-label">Nombre Completo</label>
+        <InputText id="Nombre" class="form-control" @bind-Value="cliente.Nombre" />
+    </div>
+
+    <div class="mb-3">
+        <label for="Apellidos" class="form-label">Apellidos</label>
+        <InputText id="Apellidos" class="form-control" @bind-Value="cliente.Apellidos" />
+    </div>
+
+    <div class="mb-3">
+        <label for="Tipo" class="form-label">Tipo de Cliente</label>
+        <InputSelect id="Tipo" class="form-control" @bind-Value="cliente.Tipo">
+            <option value="">Seleccione...</option>
+            <option value="REGISTRADO">REGISTRADO</option>
+            <option value="SOCIO">SOCIO</option>
+        </InputSelect>
+    </div>
+
+    @if (cliente.Tipo == TipoCliente.REGISTRADO)
+    {
+        <div class="mb-3">
+            <label for="CuotaMaxima" class="form-label">Cuota Máxima</label>
+            <InputNumber id="CuotaMaxima" class="form-control" @bind-Value="cliente.CuotaMaxima" />
+        </div>
+    }
+
+    <div class="mb-3">
+        <label for="FechaAlta" class="form-label">Fecha de Alta</label>
+        <InputDate id="FechaAlta" class="form-control" @bind-Value="cliente.FechaAlta" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Crear Cliente</button>
+</EditForm>
+
+@code {
+    private Cliente cliente = new Cliente();  // Creamos una nueva instancia del cliente
+
+    private async Task EnviarCliente()
+    {
+        // Validamos si el cliente ha completado correctamente los campos
+        if (string.IsNullOrWhiteSpace(cliente.Nombre) || string.IsNullOrWhiteSpace(cliente.Apellidos) || string.IsNullOrWhiteSpace(cliente.DNI) || cliente.FechaAlta == DateTime.MinValue)
+        {
+            await Swal.FireAsync("Error", "Por favor complete todos los campos requeridos.", SweetAlertIcon.Error);
+            return;
+        }
+
+        if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
+        {
+            await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida.", SweetAlertIcon.Error);
+            return;
+        }
+
+        if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
+        {
+            await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
+            return;
+        }
+
+        try
+        {
+            // Enviar el cliente a la API
+            var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/clientes", cliente);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                Navegador.NavigateTo("/clientes"); // Navegar a la lista de clientes
+            }
+            else
+            {
+                var error = await respuesta.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync("Error", $"Error al crear el cliente: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
+
+    void Volver()
+    {
+        Navegador.NavigateTo("/clientes");  // Volver a la lista de clientes
+    }
+}

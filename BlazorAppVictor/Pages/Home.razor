@@ -65,11 +65,11 @@
 
     /* Para que los botones estén uno debajo del otro */
     .row {
-        margin-top: 20px;
+        margin-top: 10px;
     }
 
     .mb-3 {
-        margin-bottom: 15px; 
+        margin-bottom: 10px; 
     }
 </style>
 
@@ -91,6 +91,12 @@
     <div class="row">
         <div class="col-12 text-center">
             <button class="btn btn-operation mb-3" @onclick="IrAFecha">Fechas</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrACRUD">Clientes y recibos</button>
         </div>
     </div>
 
@@ -130,6 +136,12 @@
     private void IrAFecha()
     {
         NavigationManager.NavigateTo("/fecha");
+    }
+
+    // Función para navegar a la página del CRUD de Clientes y recibos
+    private void IrACRUD()
+    {
+        NavigationManager.NavigateTo("/clientes");
     }
 
     // Función para navegar a la página de ItemSeparator

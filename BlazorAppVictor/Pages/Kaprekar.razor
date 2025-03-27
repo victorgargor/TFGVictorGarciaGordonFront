@@ -131,7 +131,7 @@
 	private async Task VerificarKaprekar()
 	{
 		// Valido la entrada para que el valor ingresado sea un número entero con las características que yo quiero
-		if (!int.TryParse(numeroTexto, out int numero) || numero < 0)
+		if (!int.TryParse(numeroTexto, out int numero) || numero <= 0)
 		{
 			await Swal.FireAsync("Error", "El parámetro proporcionado debe de ser un número entero positivo (máximo 9 dígitos).", SweetAlertIcon.Error);
 			numeroKaprekar = null;

@@ -1,0 +1,154 @@
+﻿@page "/clientes"
+@using System.Text.Json
+@using System.Net.Http.Json
+@using BlazorAppVictor.Models
+@inject HttpClient Http
+@inject SweetAlertService Swal
+@inject NavigationManager Navegador
+
+<h3>Lista de Clientes</h3>
+
+<!-- Botones de navegación -->
+<div class="mb-3">
+	<button class="btn btn-success me-2" @onclick="IrACrearCliente">Crear Cliente</button>
+	<button class="btn btn-info" @onclick="IrARecibos">Ver Recibos</button>
+</div>
+
+@if (listaClientes == null)
+{
+	<p><em>No se pudo cargar la lista de clientes.</em></p>
+}
+else if (listaClientes.Count == 0)
+{
+	<p><em>No hay ningún cliente registrado en el sistema.</em></p>
+}
+else
+{
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th>DNI</th>
+				<th>Nombre</th>
+				<th>Apellidos</th>
+				<th>Tipo</th>
+				<th>Cuota Máxima</th>
+				<th>Número de Recibos</th>
+				<th>Fecha de Alta</th>
+				<th>Acciones</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var cliente in clientesPaginados)
+			{
+				<tr>
+					<td>@cliente.DNI</td>
+					<td>@cliente.Nombre</td>
+					<td>@cliente.Apellidos</td>
+					<td>@cliente.Tipo</td>
+					<td>@(cliente.CuotaMaxima.HasValue ? cliente.CuotaMaxima.Value.ToString("C") : "N/A")</td>
+					<td>@(cliente.Recibos.Count)</td>
+					<td>@cliente.FechaAlta.ToString("yyyy/MM/dd HHmmss")</td>
+					<td>
+						<a class="btn btn-primary btn-sm" href="/editar-cliente/@cliente.DNI">Editar</a>
+						<button class="btn btn-danger btn-sm" @onclick="() => EliminarCliente(cliente.DNI)">Eliminar</button>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+	<nav>
+		<ul class="pagination">
+			<li class="page-item @(paginaActual == 1 ? "disabled" : "")">
+				<button class="page-link" @onclick="Anterior">Anterior</button>
+			</li>
+			@for (int i = 1; i <= totalPaginas; i++)
+			{
+				<li class="page-item @(paginaActual == i ? "active" : "")">
+					<button class="page-link" @onclick="() => IrAPagina(i)">@i</button>
+				</li>
+			}
+			<li class="page-item @(paginaActual == totalPaginas ? "disabled" : "")">
+				<button class="page-link" @onclick="Siguiente">Siguiente</button>
+			</li>
+		</ul>
+	</nav>
+}
+
+@code {
+	private List<Cliente> listaClientes;
+	private List<Cliente> clientesPaginados;
+	private int paginaActual = 1;
+	private int tamanoPagina = 5;
+	private int totalPaginas = 1;
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			listaClientes = await Http.GetFromJsonAsync<List<Cliente>>("https://localhost:7123/api/clientes");
+			if (listaClientes != null)
+			{
+				totalPaginas = (int)Math.Ceiling((double)listaClientes.Count / tamanoPagina);
+				IrAPagina(1);
+			}
+		}
+		catch (Exception)
+		{
+			await Swal.FireAsync("Error", "Error al cargar los clientes.", SweetAlertIcon.Error);
+		}
+	}
+
+	void IrAPagina(int pagina)
+	{
+		paginaActual = pagina;
+		clientesPaginados = listaClientes.Skip((paginaActual - 1) * tamanoPagina).Take(tamanoPagina).ToList();
+	}
+
+	void Anterior()
+	{
+		if (paginaActual > 1)
+		{
+			IrAPagina(paginaActual - 1);
+		}
+	}
+
+	void Siguiente()
+	{
+		if (paginaActual < totalPaginas)
+		{
+			IrAPagina(paginaActual + 1);
+		}
+	}
+
+	async Task EliminarCliente(string dni)
+	{
+		try
+		{
+			var respuesta = await Http.DeleteAsync($"https://localhost:7123/api/clientes/{dni}");
+			if (respuesta.IsSuccessStatusCode)
+			{
+				listaClientes = await Http.GetFromJsonAsync<List<Cliente>>("https://localhost:7123/api/clientes");
+				totalPaginas = (int)Math.Ceiling((double)listaClientes.Count / tamanoPagina);
+				IrAPagina(paginaActual > totalPaginas ? totalPaginas : paginaActual);
+			}
+			else
+			{
+				await Swal.FireAsync("Error", "No se pudo eliminar el cliente.", SweetAlertIcon.Error);
+			}
+		}
+		catch (Exception)
+		{
+			await Swal.FireAsync("Error", "Error al eliminar el cliente.", SweetAlertIcon.Error);
+		}
+	}
+
+	void IrACrearCliente()
+	{
+		Navegador.NavigateTo("/crear-cliente");
+	}
+
+	void IrARecibos()
+	{
+		Navegador.NavigateTo("/recibos");
+	}
+}

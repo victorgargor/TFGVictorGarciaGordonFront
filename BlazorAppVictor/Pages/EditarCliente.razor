@@ -1,0 +1,125 @@
+﻿@page "/editar-cliente/{dni}" 
+@using System.Net.Http.Json
+@using System.Globalization
+@using BlazorAppVictor.Models
+@inject HttpClient Http
+@inject SweetAlertService Swal
+@inject NavigationManager Navegador
+
+<h3>Editar Cliente</h3>
+
+<!-- Botón Volver -->
+<button class="btn btn-secondary mb-3" @onclick="Volver">Volver</button>
+
+@if (cliente == null)
+{
+    <p><em>Cargando cliente...</em></p>
+}
+else
+{
+    <EditForm Model="cliente" OnValidSubmit="ActualizarCliente">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="mb-3">
+            <label for="DNI" class="form-label">DNI</label>
+            <InputText id="DNI" class="form-control" @bind-Value="cliente.DNI" disabled />
+        </div>
+        <div class="mb-3">
+            <label for="Nombre" class="form-label">Nombre Completo</label>
+            <InputText id="Nombre" class="form-control" @bind-Value="cliente.Nombre" />
+        </div>
+        <div class="mb-3">
+            <label for="Tipo" class="form-label">Tipo de Cliente</label>
+            <InputSelect id="Tipo" class="form-control" @bind-Value="cliente.Tipo">
+                <option value="">Seleccione...</option>
+                <option value="REGISTRADO">REGISTRADO</option>
+                <option value="SOCIO">SOCIO</option>
+            </InputSelect>
+        </div>
+        
+        @if (cliente.Tipo == TipoCliente.REGISTRADO) 
+        {
+            <div class="mb-3">
+                <label for="CuotaMaxima" class="form-label">Cuota Máxima</label>
+                <InputNumber id="CuotaMaxima" class="form-control" @bind-Value="cliente.CuotaMaxima" />
+            </div>
+        }
+
+        <div class="mb-3">
+            <label for="FechaAlta" class="form-label">Fecha de Alta (yyyy/MM/dd HHmmss)</label>
+            <InputDate id="FechaAlta" class="form-control" @bind-Value="cliente.FechaAlta" />
+        </div>
+        <button type="submit" class="btn btn-primary">Actualizar Cliente</button>
+    </EditForm>
+}
+
+@code {
+    private Cliente cliente = new Cliente();
+    [Parameter] public string dni { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            cliente = await Http.GetFromJsonAsync<Cliente>($"https://localhost:7123/api/clientes/{dni}");
+
+            if (cliente != null)
+            {
+                // Asegurar que la fecha tiene el DateTimeKind en UTC
+                cliente.FechaAlta = DateTime.SpecifyKind(cliente.FechaAlta, DateTimeKind.Utc);
+            }
+        }
+        catch (Exception)
+        {
+            await Swal.FireAsync("Error", "Error al cargar el cliente.", SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task ActualizarCliente()
+    {
+        if (string.IsNullOrWhiteSpace(cliente.Nombre))
+        {
+            await Swal.FireAsync("Error", "El nombre del cliente no puede estar vacío.", SweetAlertIcon.Error);
+            return;
+        }
+
+        // Comparamos con el valor de la enumeración y no con un string
+        if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
+        {
+            await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida.", SweetAlertIcon.Error);
+            return;
+        }
+
+        if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
+        {
+            await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
+            return;
+        }
+
+        // Convertir la fecha a UTC antes de enviarla
+        cliente.FechaAlta = DateTime.SpecifyKind(cliente.FechaAlta, DateTimeKind.Utc);
+
+        try
+        {
+            var respuesta = await Http.PutAsJsonAsync($"https://localhost:7123/api/clientes/{cliente.DNI}", cliente);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                Navegador.NavigateTo("/clientes");
+            }
+            else
+            {
+                var error = await respuesta.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception)
+        {
+            await Swal.FireAsync("Error", "Error al actualizar el cliente.", SweetAlertIcon.Error);
+        }
+    }
+
+    void Volver()
+    {
+        Navegador.NavigateTo("/clientes");
+    }
+}
