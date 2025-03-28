@@ -1,8 +1,6 @@
 ﻿@page "/editar-recibo/{numeroRecibo}"
-@using System.ComponentModel.DataAnnotations
-@using System.Text.Json
-@using System.Net.Http.Json
 @using BlazorAppVictor.Models
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
@@ -34,7 +32,7 @@ else
             <InputNumber id="Importe" class="form-control" @bind-Value="recibo.Importe" />
         </div>
         <div class="mb-3">
-            <label for="FechaEmision" class="form-label">Fecha de Emisión (yyyy/MM/dd HHmmss)</label>
+            <label for="FechaEmision" class="form-label">Fecha de Emisión (yyyy/MM/dd HH:mm:ss)</label>
             <InputDate id="FechaEmision" class="form-control" @bind-Value="recibo.FechaEmision" />
         </div>
         <button type="submit" class="btn btn-primary">Actualizar Recibo</button>
@@ -49,6 +47,7 @@ else
     {
         try
         {
+            // Se hace una solicitud GET para obtener el recibo a editar
             recibo = await Http.GetFromJsonAsync<Recibo>($"https://localhost:7123/api/recibos/{numeroRecibo}");
         }
         catch (Exception)
@@ -67,6 +66,7 @@ else
         }
         try
         {
+            // Realizamos la solicitud PUT para actualizar el recibo
             var respuesta = await Http.PutAsJsonAsync($"https://localhost:7123/api/recibos/{recibo.NumeroRecibo}", recibo);
             if (respuesta.IsSuccessStatusCode)
             {

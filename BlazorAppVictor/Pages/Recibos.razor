@@ -1,7 +1,6 @@
 ﻿@page "/recibos"
-@using System.Text.Json
-@using System.Net.Http.Json
 @using BlazorAppVictor.Models
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
@@ -24,7 +23,7 @@ else
         <thead>
             <tr>
                 <th>Número de Recibo</th>
-                <th>DNI del Cliente</th>
+                <th>Cliente DNI</th>
                 <th>Importe</th>
                 <th>Fecha de Emisión</th>
                 <th>Acciones</th>
@@ -36,9 +35,10 @@ else
                 <tr>
                     <td>@recibo.NumeroRecibo</td>
                     <td>@recibo.ClienteDNI</td>
-                    <td>@recibo.Importe</td>
-                    <td>@recibo.FechaEmision.ToString("yyyy/MM/dd HHmmss")</td>
+                    <td>@recibo.Importe.ToString("C")</td>
+                    <td>@recibo.FechaEmision.ToString("yyyy/MM/dd HH:mm:ss")</td>
                     <td>
+                        <a class="btn btn-primary btn-sm" href="/ver-recibo/@recibo.NumeroRecibo">Ver</a>
                         <a class="btn btn-primary btn-sm" href="/editar-recibo/@recibo.NumeroRecibo">Editar</a>
                         <button class="btn btn-danger btn-sm" @onclick="() => EliminarRecibo(recibo.NumeroRecibo)">Eliminar</button>
                     </td>
@@ -46,6 +46,7 @@ else
             }
         </tbody>
     </table>
+
     <nav>
         <ul class="pagination">
             <li class="page-item @(paginaActual == 1 ? "disabled" : "")">

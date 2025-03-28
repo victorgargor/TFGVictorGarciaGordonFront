@@ -1,105 +1,199 @@
 ﻿@page "/crear-cliente"
 @using BlazorAppVictor.Models
+@using System.Text.RegularExpressions
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
 
-<h3>Crear Cliente</h3>
+<style>
+	/* Contenedor para el formulario */
+	.form-container {
+		max-width: 600px;
+		margin: 30px auto;
+		padding: 20px;
+		border: 1px solid #ddd;
+		border-radius: 8px;
+		background-color: #f9f9f9;
+		box-shadow: 0 0 10px rgba(0,0,0,0.1);
+	}
+
+	/* Título */
+	h3 {
+		font-size: 2rem;
+		text-align: center;
+		margin-top: 20px;
+		margin-bottom: 20px;
+	}
+
+	/* Botón Volver */
+	.volver-btn {
+		display: block;
+		margin: 0 auto 20px auto;
+	}
+
+	/* Inputs */
+	.form-label {
+		font-weight: bold;
+	}
+
+	.mb-3 {
+		margin-bottom: 1rem;
+	}
+</style>
+
+<h3>Crear cliente</h3>
 
 <!-- Botón Volver -->
-<button class="btn btn-secondary mb-3" @onclick="Volver">Volver</button>
+<button class="btn btn-secondary volver-btn" @onclick="Volver">Volver</button>
 
-<EditForm Model="cliente" OnValidSubmit="EnviarCliente">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<!-- Contenedor -->
+<div class="form-container">
+	<!-- Formulario -->
+	<form @onsubmit="HandleSubmit">
+		<!-- DNI -->
+		<div class="mb-3">
+			<label for="DNI" class="form-label">DNI (*)</label>
+			<input id="DNI" class="form-control" type="text" @bind="cliente.DNI" />
+		</div>
 
-    <div class="mb-3">
-        <label for="DNI" class="form-label">DNI</label>
-        <InputText id="DNI" class="form-control" @bind-Value="cliente.DNI" />
-    </div>
+		<!-- Nombre completo -->
+		<div class="mb-3">
+			<label for="Nombre" class="form-label">Nombre completo (*)</label>
+			<input id="Nombre" class="form-control" type="text" @bind="cliente.Nombre" />
+		</div>
 
-    <div class="mb-3">
-        <label for="Nombre" class="form-label">Nombre Completo</label>
-        <InputText id="Nombre" class="form-control" @bind-Value="cliente.Nombre" />
-    </div>
+		<!-- Tipo de cliente -->
+		<div class="mb-3">
+			<label for="Tipo" class="form-label">Tipo de cliente</label>
+			<select id="Tipo" class="form-control" @bind="cliente.Tipo">
+				<option value="">Seleccione...</option>
+				<option value="REGISTRADO">REGISTRADO</option>
+				<option value="SOCIO">SOCIO</option>
+			</select>
+		</div>
 
-    <div class="mb-3">
-        <label for="Apellidos" class="form-label">Apellidos</label>
-        <InputText id="Apellidos" class="form-control" @bind-Value="cliente.Apellidos" />
-    </div>
+		<!-- Cuota máxima (solo para clientes REGISTRADOS) -->
+		@if (cliente.Tipo == TipoCliente.REGISTRADO)
+		{
+			<div class="mb-3">
+				<label for="CuotaMaxima" class="form-label">Cuota máxima (*)</label>
+				<input id="CuotaMaxima" class="form-control" type="number" step="any" @bind="cliente.CuotaMaxima" />
+			</div>
+		}
 
-    <div class="mb-3">
-        <label for="Tipo" class="form-label">Tipo de Cliente</label>
-        <InputSelect id="Tipo" class="form-control" @bind-Value="cliente.Tipo">
-            <option value="">Seleccione...</option>
-            <option value="REGISTRADO">REGISTRADO</option>
-            <option value="SOCIO">SOCIO</option>
-        </InputSelect>
-    </div>
+		<!-- Fecha de alta -->
+		<div class="mb-3">
+			<label for="FechaAlta" class="form-label">Fecha de alta (yyyy/MM/dd HHmmss) (*)</label>
+			<input id="FechaAlta" class="form-control" type="text" @bind="fechaAltaTexto" />
+		</div>
 
-    @if (cliente.Tipo == TipoCliente.REGISTRADO)
-    {
-        <div class="mb-3">
-            <label for="CuotaMaxima" class="form-label">Cuota Máxima</label>
-            <InputNumber id="CuotaMaxima" class="form-control" @bind-Value="cliente.CuotaMaxima" />
-        </div>
-    }
-
-    <div class="mb-3">
-        <label for="FechaAlta" class="form-label">Fecha de Alta</label>
-        <InputDate id="FechaAlta" class="form-control" @bind-Value="cliente.FechaAlta" />
-    </div>
-
-    <button type="submit" class="btn btn-success">Crear Cliente</button>
-</EditForm>
+		<!-- Botón Crear -->
+		<button type="submit" class="btn btn-success">Crear cliente</button>
+	</form>
+</div>
 
 @code {
-    private Cliente cliente = new Cliente();  // Creamos una nueva instancia del cliente
+	// Instancia del modelo para el binding.
+	private Cliente cliente = new Cliente();
+	// Propiedad para almacenar la fecha de alta en formato de texto.
+	private string? fechaAltaTexto;
 
-    private async Task EnviarCliente()
-    {
-        // Validamos si el cliente ha completado correctamente los campos
-        if (string.IsNullOrWhiteSpace(cliente.Nombre) || string.IsNullOrWhiteSpace(cliente.Apellidos) || string.IsNullOrWhiteSpace(cliente.DNI) || cliente.FechaAlta == DateTime.MinValue)
-        {
-            await Swal.FireAsync("Error", "Por favor complete todos los campos requeridos.", SweetAlertIcon.Error);
-            return;
-        }
+	/// <summary>
+	/// Manejador del evento de envío del formulario.
+	/// Se encarga de prevenir el comportamiento por defecto y llamar al método de envío.
+	/// </summary>
+	/// <param name="e">Argumentos del evento.</param>
+	private async Task HandleSubmit(EventArgs e)
+	{
+		// Como uso el @onsubmit solo se llama a EnviarCliente.
+		await EnviarCliente();
+	}
 
-        if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
-        {
-            await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida.", SweetAlertIcon.Error);
-            return;
-        }
+	/// <summary>
+	/// Valida los campos y envía el cliente a la API.
+	/// </summary>
+	private async Task EnviarCliente()
+	{
+		// Validación del DNI
+		// Si está vacío
+		if (string.IsNullOrWhiteSpace(cliente.DNI))
+		{
+			await Swal.FireAsync("Error", "El DNI es obligatorio", SweetAlertIcon.Error);
+			return;
+		}
+		// Si no son 8 dígitos seguidos de una letra
+		if (!Regex.IsMatch(cliente.DNI, @"^\d{8}[A-Za-z]$"))
+		{
+			await Swal.FireAsync("Error", "El DNI debe tener 8 dígitos seguidos de una letra", SweetAlertIcon.Error);
+			return;
+		}
 
-        if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
-        {
-            await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
-            return;
-        }
+		// Valido que se introduzca un nombre
+		if (string.IsNullOrWhiteSpace(cliente.Nombre))
+		{
+			await Swal.FireAsync("Error", "El nombre del cliente es obligatorio", SweetAlertIcon.Error);
+			return;
+		}
 
-        try
-        {
-            // Enviar el cliente a la API
-            var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/clientes", cliente);
-            if (respuesta.IsSuccessStatusCode)
-            {
-                Navegador.NavigateTo("/clientes"); // Navegar a la lista de clientes
-            }
-            else
-            {
-                var error = await respuesta.Content.ReadAsStringAsync();
-                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            await Swal.FireAsync("Error", $"Error al crear el cliente: {ex.Message}", SweetAlertIcon.Error);
-        }
-    }
+		// Si el cliente es REGISTRADO debe tener una cuota máxima válida y debe de ser un número positivo mayor que 0)
+		if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
+		{
+			await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida (número positivo mayor que 0)", SweetAlertIcon.Error);
+			return;
+		}
+		// Si es SOCIO no deben tener cuota máxima
+		if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
+		{
+			await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
+			return;
+		}
 
-    void Volver()
-    {
-        Navegador.NavigateTo("/clientes");  // Volver a la lista de clientes
-    }
+		// Valido que la fecha se ponga y que tenga el formato "yyyy/MM/dd HHmmss"
+		if (string.IsNullOrWhiteSpace(fechaAltaTexto))
+		{
+			await Swal.FireAsync("Error", "La fecha de alta es obligatoria", SweetAlertIcon.Error);
+			return;
+		}
+		if (!DateTime.TryParseExact(fechaAltaTexto, "yyyy/MM/dd HHmmss",
+				System.Globalization.CultureInfo.InvariantCulture,
+				System.Globalization.DateTimeStyles.None, out DateTime fechaAlta))
+		{
+			await Swal.FireAsync("Error", "La fecha de alta debe tener el formato 'yyyy/MM/dd HHmmss' y valores lógicos.", SweetAlertIcon.Error);
+			return;
+		}
+
+		// Convierto la fecha a UTC para la base de datos
+		cliente.FechaAlta = DateTime.SpecifyKind(fechaAlta, DateTimeKind.Utc);
+
+		try
+		{
+			// Envio los datos a la API
+			var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/clientes", cliente);
+			if (respuesta.IsSuccessStatusCode)
+			{
+				// Si es exitoso, redirigir al listado de clientes
+				Volver();
+			}
+			else
+			{
+				// Si ocurre un error lo muestro
+				var error = await respuesta.Content.ReadAsStringAsync();
+				await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+			}
+		}
+		catch (Exception ex)
+		{
+			// Manejo de excepciones
+			await Swal.FireAsync("Error", $"Error al crear el cliente: {ex.Message}", SweetAlertIcon.Error);
+		}
+	}
+
+	/// <summary>
+	/// Navega de regreso a la lista de clientes.
+	/// </summary>
+	public void Volver()
+	{
+		Navegador.NavigateTo("/clientes");
+	}
 }

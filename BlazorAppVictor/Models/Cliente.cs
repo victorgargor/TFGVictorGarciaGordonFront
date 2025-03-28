@@ -3,10 +3,9 @@
 namespace BlazorAppVictor.Models
 {
     public class Cliente
-    {
-        /// <summary>
-        /// Propiedad para el DNI del cliente.
-        /// </summary>
+    {/// <summary>
+     /// Propiedad para el DNI del cliente.
+     /// </summary>
         [Key]
         [Required(ErrorMessage = "El DNI es obligatorio.")]
         [StringLength(9, MinimumLength = 9, ErrorMessage = "El DNI debe tener 9 caracteres.")]
@@ -18,14 +17,7 @@ namespace BlazorAppVictor.Models
         /// </summary>
         [Required(ErrorMessage = "El nombre es obligatorio.")]
         [StringLength(50, ErrorMessage = "El nombre no puede tener más de 50 caracteres.")]
-        public string? Nombre { get; set; }
-
-        /// <summary>
-        /// Propiedad para los apellidos del cliente.
-        /// </summary>
-        [Required(ErrorMessage = "Los apellidos son obligatorios.")]
-        [StringLength(100, ErrorMessage = "Los apellidos no pueden tener más de 100 caracteres.")]
-        public string? Apellidos { get; set; }
+        public string Nombre { get; set; }
 
         /// <summary>
         /// Propiedad para el tipo de cliente (REGISTRADO o SOCIO).
@@ -49,6 +41,5 @@ namespace BlazorAppVictor.Models
         /// Lista de recibos asociados al cliente.
         /// </summary>
         public List<Recibo> Recibos { get; set; } = new List<Recibo>();
-
     }
 }

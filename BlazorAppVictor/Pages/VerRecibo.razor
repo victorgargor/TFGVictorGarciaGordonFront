@@ -1,0 +1,51 @@
+﻿@page "/ver-recibo/{numeroRecibo}"
+@using BlazorAppVictor.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject SweetAlertService Swal
+@inject NavigationManager Navegador
+
+<h3>Detalles del Recibo</h3>
+
+<button class="btn btn-secondary mb-3" @onclick="Volver">Volver</button>
+
+@if (recibo == null)
+{
+    <p><em>Cargando recibo...</em></p>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Recibo #@recibo.NumeroRecibo</strong>
+        </div>
+        <div class="card-body">
+            <p><strong>DNI del Cliente:</strong> @recibo.ClienteDNI</p>
+            <p><strong>Importe:</strong> @recibo.Importe.ToString("C")</p>
+            <p><strong>Fecha de Emisión:</strong> @recibo.FechaEmision.ToString("yyyy/MM/dd HH:mm:ss")</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string numeroRecibo { get; set; }
+    private Recibo recibo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            recibo = await Http.GetFromJsonAsync<Recibo>($"https://localhost:7123/api/recibos/{numeroRecibo}");
+        }
+        catch (Exception)
+        {
+            await Swal.FireAsync("Error", "Error al cargar el recibo.", SweetAlertIcon.Error);
+            Navegador.NavigateTo("/recibos");
+        }
+    }
+
+    void Volver()
+    {
+        Navegador.NavigateTo("/recibos");
+    }
+}

@@ -2,19 +2,40 @@
 
 namespace BlazorAppVictor.Models
 {
+    /// <summary>
+    /// Representa un recibo asociado a un cliente.
+    /// </summary>
     public class Recibo
     {
-        [Required(ErrorMessage = "El número de recibo es requerido.")]
+        /// <summary>
+        /// Número de recibo único que actúa como PK (primary key).
+        /// </summary>
+        [Key]
+        [Required(ErrorMessage = "El número de recibo es requerido")]
         public string NumeroRecibo { get; set; }
 
-        [Required(ErrorMessage = "El importe es requerido.")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "El importe debe ser mayor a 0.")]
+        /// <summary>
+        /// Importe del recibo.
+        /// </summary>
+        [Required(ErrorMessage = "Se requiere importe")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El importe debe ser mayor a 0")]
         public decimal Importe { get; set; }
 
-        [Required(ErrorMessage = "La fecha de emisión es requerida.")]
+        /// <summary>
+        /// Fecha de emisión del recibo.
+        /// </summary>
+        [Required(ErrorMessage = "Se requiere la fecha de emisión")]
         public DateTime FechaEmision { get; set; }
 
-        [Required(ErrorMessage = "El DNI del cliente es requerido.")]
+        /// <summary>
+        /// DNI del cliente al que pertenece el recibo.
+        /// </summary>
+        [Required(ErrorMessage = "Se requiere el DNI del cliente correspondiente")]
         public string ClienteDNI { get; set; }
+
+        /// <summary>
+        /// Propiedad de navegación con el cliente asociado al recibo.
+        /// </summary>
+        public Cliente? Cliente { get; set; }
     }
 }

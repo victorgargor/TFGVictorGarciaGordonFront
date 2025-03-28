@@ -1,8 +1,6 @@
 ﻿@page "/crear-recibo"
-@using System.ComponentModel.DataAnnotations
-@using System.Text.Json
-@using System.Net.Http.Json
 @using BlazorAppVictor.Models
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
@@ -28,7 +26,7 @@
         <InputNumber id="Importe" class="form-control" @bind-Value="recibo.Importe" />
     </div>
     <div class="mb-3">
-        <label for="FechaEmision" class="form-label">Fecha de Emisión (yyyy/MM/dd HHmmss)</label>
+        <label for="FechaEmision" class="form-label">Fecha de Emisión (yyyy/MM/dd HH:mm:ss)</label>
         <InputDate id="FechaEmision" class="form-control" @bind-Value="recibo.FechaEmision" />
     </div>
     <button type="submit" class="btn btn-success">Crear Recibo</button>
@@ -78,4 +76,3 @@
         Navegador.NavigateTo("/recibos");
     }
 }
-
