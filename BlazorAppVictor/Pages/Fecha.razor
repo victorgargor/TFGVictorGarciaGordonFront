@@ -3,7 +3,7 @@
 @inject HttpClient Http
 @inject SweetAlertService Swal
 
-<PageTitle>Operaciones con Fechas</PageTitle>
+<PageTitle>Operaciones con fechas</PageTitle>
 
 <style>
 	/* Estilos globales */
@@ -118,7 +118,7 @@
 	}
 </style>
 
-<h1>Operaciones con Fechas</h1>
+<h1>Operaciones con fechas</h1>
 
 <div class="container">
     <!-- Inputs -->
@@ -129,10 +129,10 @@
 
     <!-- Botones -->
     <div class="buttons-section">
-        <button class="btn-operation" @onclick='() => RealizarOperacion("diferencia")'>Calcular Diferencia</button>
-        <button class="btn-operation" @onclick='() => RealizarOperacion("inicio-fin")'>Inicio y Fin del Año</button>
-        <button class="btn-operation" @onclick='() => RealizarOperacion("dias")'>Mostrar Días del Año</button>
-        <button class="btn-operation" @onclick='() => RealizarOperacion("semana")'>Mostrar Semana del Año</button>
+        <button class="btn-operation" @onclick='() => RealizarOperacion("diferencia")'>Calcular diferencia</button>
+        <button class="btn-operation" @onclick='() => RealizarOperacion("inicio-fin")'>Inicio y fin del año</button>
+        <button class="btn-operation" @onclick='() => RealizarOperacion("dias")'>Mostrar días del año</button>
+        <button class="btn-operation" @onclick='() => RealizarOperacion("semana")'>Mostrar semana del año</button>
     </div>
 
     <!-- Salida -->
@@ -165,38 +165,61 @@
             return;
         }
 
-        // Creo el objeto para enviar en la solicitud (FechasRequest)
-        var fechasRequest = new
+        // Intento parsear las fechas
+        bool isFecha1Valid = DateTime.TryParseExact(fecha1, "yyyy/MM/dd", null, System.Globalization.DateTimeStyles.None, out var parsedFecha1);
+        bool isFecha2Valid = DateTime.TryParseExact(fecha2, "yyyy/MM/dd", null, System.Globalization.DateTimeStyles.None, out var parsedFecha2);
+
+        // Verifico qué fechas son inválidas y muestro el error adecuado
+        if (!isFecha1Valid && !isFecha2Valid)
         {
-            Fecha1 = fecha1,
-            Fecha2 = fecha2
-        };
-
-        // Construyo la URL para la API dependiendo de la operación
-        string url = $"https://localhost:7123/api/fecha/{operacion}";
-
-        // Realizo la solicitud POST a la API para la operación seleccionada
-        try
+            // Ambas fechas son inválidas
+            await Swal.FireAsync("Error", $"Las fechas ingresadas {fecha1} y {fecha2} no tienen un formato válido o no son admitidas. El formato correcto es yyyy/MM/dd.", SweetAlertIcon.Error);
+        }
+        else if (!isFecha1Valid)
         {
-            var response = await Http.PostAsJsonAsync(url, fechasRequest);
-
-            if (response.IsSuccessStatusCode)
+            // Solo la fecha 1 es inválida
+            await Swal.FireAsync("Error", $"La fecha {fecha1} ingresada no tiene un formato válido o no está admitida. El formato correcto es yyyy/MM/dd.", SweetAlertIcon.Error);
+        }
+        else if (!isFecha2Valid)
+        {
+            // Solo la fecha 2 es inválida
+            await Swal.FireAsync("Error", $"La fecha {fecha2} ingresada no tiene un formato válido o no está admitida. El formato correcto es yyyy/MM/dd.", SweetAlertIcon.Error);
+        }
+        else
+        {
+            // Si las dos fechas son válidas, procedo con la operación
+            var fechasRequest = new
             {
-                var data = await response.Content.ReadFromJsonAsync<JsonElement>();
-                resultado = ObtenerResultado(data, operacion);
+                Fecha1 = fecha1,
+                Fecha2 = fecha2
+            };
+
+            // Construyo la URL para la API dependiendo de la operación
+            string url = $"https://localhost:7123/api/fecha/{operacion}";
+
+            // Realizo la solicitud POST a la API para la operación seleccionada
+            try
+            {
+                var response = await Http.PostAsJsonAsync(url, fechasRequest);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var data = await response.Content.ReadFromJsonAsync<JsonElement>();
+                    resultado = ObtenerResultado(data, operacion);
+                }
+                else
+                {
+                    // Si la fecha no es correcta o el formato
+                    await Swal.FireAsync("Error", "El formato admitido es yyyy/MM/dd o la fecha seleccionada no está admitida.", SweetAlertIcon.Error);
+                    resultado = null;
+                }
             }
-            else
+            catch (Exception ex)
             {
-				// Si la fecha no es correcta o el formato
-				await Swal.FireAsync("Error", "El formato admitido es yyyy/MM/dd o la fecha seleccionada no está admitida.", SweetAlertIcon.Error);
+                // Manejo de excepciones
+                await Swal.FireAsync("Error", $"{ex.Message}", SweetAlertIcon.Error);
                 resultado = null;
             }
-        }
-        catch (Exception ex)
-        {
-			// Manejo de excepciones
-            await Swal.FireAsync("Error", $"{ex.Message}", SweetAlertIcon.Error);
-            resultado = null;
         }
     }
 

@@ -4,7 +4,7 @@
 @inject HttpClient Http
 @inject SweetAlertService Swal
 
-<PageTitle>Operaciones con Texto</PageTitle>
+<PageTitle>Operaciones con texto</PageTitle>
 
 <style>
 	/* Estilos globales */
@@ -33,7 +33,7 @@
 		display: grid;
 		grid-template-columns: 2fr 1fr 2fr;
 		gap: 20px;
-		align-items: center;
+		align-items: start;
 	}
 
 	/* Título */
@@ -65,7 +65,7 @@
 	/* Textareas */
 	textarea {
 		width: 100%;
-		min-height: 300px;
+		min-height: 318px;
 		padding: 16px;
 		font-size: 1rem;
 		line-height: 1.5;
@@ -128,14 +128,14 @@
 	}
 </style>
 
-<h1>Operaciones con Texto</h1>
+<h1>Operaciones con texto</h1>
 
 <div class="container">
 	<!-- Inputs -->
 	<div class="input-section">
 		<div class="form-group">
-			<label for="inputText">Texto de Entrada:</label>
-			<textarea id="inputText" @bind="inputText" placeholder="Escribe tu texto aquí..."></textarea>
+			<label for="inputText">Texto de entrada:</label>
+			<textarea id="inputText" @bind="inputText" placeholder="Escriba su texto aquí..."></textarea>
 		</div>
 
 		<div class="form-group">

@@ -20,7 +20,7 @@
         text-align: center;
         font-size: 2.5rem;
         font-weight: bold;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
 
     /* Estilo p */
@@ -65,26 +65,33 @@
 
     /* Para que los botones estén uno debajo del otro */
     .row {
-        margin-top: 10px;
+        margin-top: 5px;
     }
 
     .mb-3 {
-        margin-bottom: 10px; 
+        margin-bottom: 5px; 
     }
 </style>
 
 <h1>¡Bienvenido a mi API!</h1>
-<p class="highlighted-text">¿Qué operación deseas realizar?</p>
+<p class="highlighted-text">¿Qué operación desea realizar?</p>
 
 <div class="container">
     <div class="row">
         <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrACalculadora">Ir a la Calculadora</button>
+            <button class="btn btn-operation mb-3" @onclick="IrACalculadora">Calculadora</button>
         </div>
     </div>
+
     <div class="row">
         <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrATexto">Operaciones con Texto</button>
+            <button class="btn btn-operation mb-3" @onclick="IrACalculadoraDecimal">Calculadora decimal</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-operation mb-3" @onclick="IrATexto">Operaciones con texto</button>
         </div>
     </div>
 
@@ -124,6 +131,12 @@
     private void IrACalculadora()
     {
         NavigationManager.NavigateTo("/calculadora");
+    }
+
+    // Función para navegar a la página de la calculadora
+    private void IrACalculadoraDecimal()
+    {
+        NavigationManager.NavigateTo("/calculadoraDecimal");
     }
 
     // Función para navegar a la página de Operaciones con texto

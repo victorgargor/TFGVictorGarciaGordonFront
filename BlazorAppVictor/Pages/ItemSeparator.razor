@@ -3,7 +3,7 @@
 @inject HttpClient Http
 @inject SweetAlertService Swal
 
-<PageTitle>Item Separator</PageTitle>
+<PageTitle>ItemSeparator</PageTitle>
 
 <style>
 	/* Estilos globales */
@@ -117,11 +117,11 @@
 	<!-- Inputs -->
 	<div class="input-section">
 		<div class="form-group">
-			<label for="inputItemText">Cadena de Entrada:</label>
+			<label for="inputItemText">Cadena de entrada:</label>
 			<textarea id="inputItemText" @bind="inputText" placeholder="(ej: NombreItem$$##Precio$$##Cantidad)"></textarea>
 		</div>
 
-		<button class="btn-operation" @onclick="ProcesarCadena">Procesar Cadena</button>
+		<button class="btn-operation" @onclick="ProcesarCadena">Procesar cadena</button>
 	</div>
 
 	<!-- Salida -->
@@ -186,7 +186,7 @@
 			// Valido que el precio sea un número y que sea positivo
 			if (!double.TryParse(partes[1].Trim(), out var precio) || precio < 0)
 			{
-				await Swal.FireAsync("Error", "El precio debe ser un número positivo.", SweetAlertIcon.Error);
+				await Swal.FireAsync("Error", $"El precio {partes[1].Trim()} debe ser un número positivo.", SweetAlertIcon.Error);
 				resultado = "";
 				return;
 			}
@@ -194,7 +194,7 @@
 			// Valido la cantidad
 			if (!int.TryParse(partes[2].Trim(), out var cantidad) || cantidad < 0)
 			{
-				await Swal.FireAsync("Error", "La cantidad debe ser un número entero positivo mayor que 0 y de 9 dígitos máximo.", SweetAlertIcon.Error);
+				await Swal.FireAsync("Error", $"La cantidad {partes[2].Trim()} debe ser un número entero positivo mayor que 0 y de 9 dígitos máximo.", SweetAlertIcon.Error);
 				resultado = "";
 				return;
 			}
@@ -204,7 +204,7 @@
 
 			if (cantidadStr.Length >= 10)
 			{
-				await Swal.FireAsync("Error", "El valor de la cantidad es demasiado largo (9 dígitos máximo).", SweetAlertIcon.Error);
+				await Swal.FireAsync("Error", $"El valor de la cantidad {partes[2].Trim()} es demasiado largo (9 dígitos máximo).", SweetAlertIcon.Error);
 				resultado = "";
 				return;
 			}

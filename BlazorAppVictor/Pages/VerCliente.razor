@@ -5,57 +5,58 @@
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
 
-<h3>Detalles del Cliente</h3>
+<h3>Detalles del cliente</h3>
 
 <button class="btn btn-secondary mb-3" @onclick="Volver">Volver</button>
 
 @if (cliente == null)
 {
-        <p><em>Cargando cliente...</em></p>
+    <p><em>Cargando cliente...</em></p>
 }
 else
 {
-        <div class="card mb-3">
-            <div class="card-header">
-                <strong>@cliente.Nombre (@cliente.DNI)</strong>
-            </div>
-            <div class="card-body">
-                <p><strong>Tipo:</strong> @cliente.Tipo</p>
-                <p><strong>Cuota Máxima:</strong> @(cliente.CuotaMaxima.HasValue ? cliente.CuotaMaxima.Value.ToString("C") : "N/A")</p>
-                <p><strong>Fecha de Alta:</strong> @cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</p>
-            </div>
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>@cliente.Nombre (@cliente.DNI)</strong>
         </div>
+        <div class="card-body">
+            <p><strong>Tipo:</strong> @cliente.Tipo</p>
+            <p><strong>Cuota Máxima:</strong> @(cliente.CuotaMaxima.HasValue ? cliente.CuotaMaxima.Value.ToString("C") : "N/A")</p>
+            <p><strong>Fecha de Alta:</strong> @cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</p>
+        </div>
+    </div>
 
-        <h4>Recibos Asociados</h4>
+    <h4>Recibos Asociados</h4>
     @if (cliente.Recibos == null || !cliente.Recibos.Any())
     {
-                <p><em>No hay recibos asociados a este cliente.</em></p>
+        <p><em>No hay recibos asociados a este cliente.</em></p>
     }
     else
     {
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Número de Recibo</th>
-                            <th>Importe</th>
-                            <th>Fecha de Emisión</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Número de Recibo</th>
+                    <th>Importe</th>
+                    <th>Fecha de Emisión</th>
+                </tr>
+            </thead>
+            <tbody>
                 @foreach (var recibo in cliente.Recibos)
                 {
-                                <tr>
-                                    <td>@recibo.NumeroRecibo</td>
-                                    <td>@recibo.Importe</td>
-                                    <td>@recibo.FechaEmision.ToString("yyyy/MM/dd HH:mm:ss")</td>
-                                </tr>
+                    <tr>
+                        <td>@recibo.NumeroRecibo</td>
+                        <td>@recibo.Importe</td>
+                        <td>@recibo.FechaEmision.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                    </tr>
                 }
-                    </tbody>
-                </table>
+            </tbody>
+        </table>
     }
 }
 
 @code {
+    // Parámetro para la URL que es el DNI del cliente a ver (pongo el [Parameter] porque da error sino se pone)
     [Parameter] public string dni { get; set; }
     private Cliente cliente;
 
@@ -63,16 +64,18 @@ else
     {
         try
         {
+            // Hago la petición para cargar el cliente del que luego formatearé y mostraré sus datos
             cliente = await Http.GetFromJsonAsync<Cliente>($"https://localhost:7123/api/clientes/{dni}");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await Swal.FireAsync("Error", "Error al cargar el cliente.", SweetAlertIcon.Error);
-            Navegador.NavigateTo("/clientes");
+            // Manejo de excepciones y vuelvo a /clientes si hay error
+            await Swal.FireAsync("Error", $"Error al cargar el cliente: {ex.Message}", SweetAlertIcon.Error);
+            Volver();
         }
     }
 
-    void Volver()
+    public void Volver()
     {
         Navegador.NavigateTo("/clientes");
     }

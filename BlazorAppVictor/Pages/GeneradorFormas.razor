@@ -111,7 +111,7 @@
 	}
 </style>
 
-<h3>Generar Formas</h3>
+<h3>Generar formas</h3>
 
 <!-- Contenedor principal -->
 <div class="container">
@@ -221,7 +221,7 @@
 						sb.AppendLine($"Tipo: {tipo}");
 						sb.AppendLine($"Color: {color}");
 						sb.AppendLine($"Centro: ({x}, {y})");
-						sb.AppendLine($"Área: {area}");
+						sb.AppendLine($"Área: {area} u");
 						sb.AppendLine($"Propiedades: {propiedades}");
 						sb.AppendLine(new string('-', 40));
 					}
@@ -248,7 +248,7 @@
 							var yC = centroCirculo.GetProperty("y").GetInt32();
 							var areaCirculo = circulo.GetProperty("area").ToString();
 
-							sb.AppendLine($"  Radio: {radio}, Color: {colorCirculo}, Centro: ({xC}, {yC}), Área: {areaCirculo}");
+							sb.AppendLine($"  Radio: {radio} u, Color: {colorCirculo}, Centro: ({xC}, {yC}), Área: {areaCirculo} u");
 						}
 						sb.AppendLine(new string('-', 40));
 					}
@@ -266,7 +266,7 @@
 							var yC = centroCuadrado.GetProperty("y").GetInt32();
 							var areaCuadrado = cuadrado.GetProperty("area").ToString();
 
-							sb.AppendLine($"  Lado: {lado}, Color: {colorCuadrado}, Centro: ({xC}, {yC}), Área: {areaCuadrado}");
+							sb.AppendLine($"  Lado: {lado} u, Color: {colorCuadrado}, Centro: ({xC}, {yC}), Área: {areaCuadrado} u");
 						}
 						sb.AppendLine(new string('-', 40));
 					}
@@ -311,9 +311,9 @@
 								}
 							}
 
-							sb.AppendLine($"  Base: {baseTri}, Altura: {altura}, Color: {colorTri}");
-							sb.AppendLine($"  Centro: ({xT}, {yT}), Área: {areaTri}");
-							sb.AppendLine($"  Desplazamiento: {desplazamiento}, Ángulos: {angulos}");
+							sb.AppendLine($"  Base: {baseTri} u, Altura: {altura} u, Color: {colorTri}");
+							sb.AppendLine($"  Centro: ({xT}, {yT}), Área: {areaTri} u");
+							sb.AppendLine($"  Desplazamiento: {desplazamiento} u, Ángulos: {angulos}");
 							sb.AppendLine(new string('-', 40));
 						}
 					}
