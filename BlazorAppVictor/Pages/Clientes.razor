@@ -1,285 +1,155 @@
 ﻿@page "/clientes"
-@using System.Net.Http.Json
 @using BlazorAppVictor.Models
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
 
+<h3>Lista de Clientes</h3>
+
 <style>
-    /* Título */
-    .titulo {
-        font-size: 2.5rem; 
-        text-align: center; 
-        margin-top: 30px; 
-        margin-bottom: 20px; 
+    table tbody tr td {
+        vertical-align: middle !important;
     }
-
-    /* Botón Crear cliente */
-    .btn-success {
-        margin-bottom: 20px;
-    }
-
-    /* Tabla */
-    .tabla-clientes {
-        width: 100%; 
-        margin: 0 auto;
-        text-align: center; 
-    }
-
-    /* Label */
-    .form-label {
-        font-weight: bold; /* Negrita */
-    }
-
-    /* Select */
-    .d-flex {
-        justify-content: space-between;
-        margin-bottom: 20px; 
-    }
-
-    .mb-3 {
-        margin-bottom: 1.5rem;
-    }
-
-    .btn-primary, .btn-success {
-        margin-left: 5px;
-    }
-
-    /* Paginación */
-    .paginacion {
-        text-align: center;
-        margin-top: 20px;
-    }
-
-    /* Estilos generales de la tabla */
-    table {
-        width: 100%;
-        margin-top: 20px;
-        border-collapse: collapse; 
-    }
-
-    /* Celdas */
-    th, td {
-        padding: 10px;
-        text-align: center;
-        border: 1px solid #ddd; 
-
-    th {
-        background-color: #f4f4f4; 
-    }
-
-    td {
-        background-color: #fff; 
-    }
-
-    .btn-sm {
-        margin-right: 5px;
-    }
-
-   
 </style>
 
-<h3 class="titulo">Lista de Clientes</h3>
+<button class="btn btn-primary mb-3" @onclick="CrearCliente">Nuevo Cliente</button>
 
-<div class="d-flex align-items-center mb-3">
-    <!-- Crear cliente -->
-    <button class="btn btn-success me-2" @onclick="IrACrearCliente">Crear cliente</button>
-
-    <!-- Ver recibos-->
-    <button class="btn btn-info" @onclick="IrARecibos">Ver recibos</button>
-</div>
-
-<!-- Filtrado -->
-<div class="d-flex justify-content-between mb-3">
-    <div>
-        <label for="Ordenar" class="form-label">Ordenar</label>
-        <!-- Select -->
-        <select id="Ordenar" class="form-select" @onchange="ActualizarListaClientes">
-            <option value="DNI">DNI</option>
-            <option value="FechaAlta">Fecha de alta</option>
-        </select>
-    </div>
-</div>
-
-@if (listaClientes == null)
+@if (clientes == null)
 {
     <p><em>Cargando clientes...</em></p>
 }
-// Si no hay ningún cliente en la base de datos
-else if (!listaClientes.Any())
+else if (!clientes.Any())
 {
-    <p><em>No hay ningún cliente registrado en el sistema.</em></p>
+    <p><em>No hay clientes registrados.</em></p>
 }
 else
 {
-    <!-- Tabla -->
-    <table class="table table-striped tabla-clientes">
+    <table class="table table-striped">
         <thead>
             <tr>
-                <th>DNI</th>
-                <th>Nombre completo</th>
-                <th>Tipo</th>
-                <th>Cuota máxima</th>
-                <th>Fecha de alta</th>
-                <th>Acciones</th>
+                <th class="text-start"></th>
+                <th class="text-start">DNI</th>
+                <th class="text-start">Nombre</th>
+                <th class="text-start">Apellido 1</th>
+                <th class="text-start">Apellido 2</th>
+                <th class="text-start">Tipo</th>
+                <th class="text-start">Cuota Máxima</th> <!-- Alineación a la derecha para esta columna -->
+                <th class="text-start">Fecha de Alta</th>
+                <th class="text-start">Fecha de Baja</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var cliente in clientesPaginados)
+            @foreach (var cliente in clientes)
             {
                 <tr>
-                    <td>@cliente.DNI</td>
-                    <td>@cliente.Nombre</td>
-                    <td>@cliente.Tipo</td>
-                    <td>@(cliente.CuotaMaxima.HasValue ? cliente.CuotaMaxima.Value.ToString("C") : "N/A")</td>
-                    <td>@cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</td>
-                    <td>
-                        <a class="btn btn-primary btn-sm" href="/editar-cliente/@cliente.DNI">Editar</a>
-                        <button class="btn btn-danger btn-sm" @onclick="() => ConfirmarEliminar(cliente.DNI)">Eliminar</button>
-                        <a class="btn btn-info btn-sm" href="/ver-cliente/@cliente.DNI">Ver</a>
+                    <td class="d-flex justify-content-start">
+                        <button class="btn btn-info btn-sm ms-2" @onclick="() => VerCliente(cliente.DNI)">Ver</button>
+                        <button class="btn btn-sm ms-2"><i class="bi bi-pencil fs-3"></i></button>
+                        <button class="btn btn-sm ms-2"><i class="bi bi-person-x fs-3"></i></button>
+                        @if (cliente.FechaBaja.HasValue)
+                        {
+                            <button class="btn btn-success btn-sm" @onclick="() => ReactivarCliente(cliente.DNI)">Reactivar</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-danger btn-sm" @onclick="() => DarBaja(cliente.DNI)">Dar Baja</button>
+                        }
                     </td>
+                    <td class="text-start">@cliente.DNI</td>
+                    <td class="text-start">@cliente.Nombre</td>
+                    <td class="text-start">@cliente.Apellido1</td>
+                    <td class="text-start">@cliente.Apellido2</td>
+                    <td class="text-start">@cliente.Tipo</td>
+                    <td class="text-end" style="padding-right: 65px;">
+                        @(cliente.CuotaMaxima.HasValue ? $"{cliente.CuotaMaxima.Value:C2}" : "N/A")
+                    </td>
+                    <td class="text-start">@cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</td> <!-- Fecha con HH:MM:SS -->
+                    <td class="text-start">@(cliente.FechaBaja.HasValue ? cliente.FechaBaja.Value.ToString("yyyy/MM/dd HH:mm:ss") : "N/A")</td> <!-- Fecha con HH:MM:SS -->
                 </tr>
             }
         </tbody>
     </table>
-
-    <!-- Paginación -->
-    <div class="paginacion">
-        <button class="btn btn-secondary btn-sm" @onclick="() => IrAPagina(paginaActual - 1)" disabled="@((paginaActual == 1) ? true : false)">Anterior</button>
-        <span>Página @paginaActual de @totalPaginas</span>
-        <button class="btn btn-secondary btn-sm ms-2" @onclick="() => IrAPagina(paginaActual + 1)" disabled="@((paginaActual == totalPaginas) ? true : false)">Siguiente</button>
-    </div>
 }
 
 @code {
-    // Lista completa de clientes
-    private List<Cliente> listaClientes;
+    private List<Cliente> clientes;
 
-    // La lista que se muestra en la página actual
-    private List<Cliente> clientesPaginados; 
-    
-    // Página actual
-    private int paginaActual = 1; 
-
-    // Número de registros por página
-    private int tamanoPagina = 5; 
-    
-    //Total de páginas
-    private int totalPaginas = 1; 
-
-    // Variable para almacenar el criterio de ordenación por defecto por DNI
-    private string ordenSeleccionado = "DNI"; 
-
-    // Al iniciar cargo loos clientes desde la API
     protected override async Task OnInitializedAsync()
-    {
-        await CargarClientes(); 
-    }
-
-    // Método para cargar los clientes desde la API
-    private async Task CargarClientes()
     {
         try
         {
-            // Llamo a la API para obtener los clientes
-            listaClientes = await Http.GetFromJsonAsync<List<Cliente>>("https://localhost:7123/api/clientes");
-           
-            // Calcular el número total de páginas
-            totalPaginas = (int)Math.Ceiling((double)listaClientes.Count / tamanoPagina); 
-            
-            // Cargo los clientes de la primera página
-            IrAPagina(1); 
+            // Traer los clientes desde la API
+            clientes = await Http.GetFromJsonAsync<List<Cliente>>("https://localhost:7123/api/clientes");
         }
         catch (Exception ex)
         {
-            // En caso de error, mostrar un mensaje de error
             await Swal.FireAsync("Error", $"Error al cargar los clientes: {ex.Message}", SweetAlertIcon.Error);
         }
     }
 
-    // Método para actualizar la lista de clientes y mostrar una página específica
-    public void IrAPagina(int pagina)
-    {
-        if (pagina < 1 || pagina > totalPaginas)
-            return;
-
-        // Actualizo la página actual
-        paginaActual = pagina; 
-
-        // Ordenar la lista según el criterio seleccionado (DNI o Fecha de alta)
-        clientesPaginados = listaClientes
-            .OrderBy(cliente => ordenSeleccionado == "DNI" ? cliente.DNI : cliente.FechaAlta.ToString())
-            // Saltar los elementos anteriores a la página actual
-            .Skip((paginaActual - 1) * tamanoPagina) 
-            // Tomar los elementos para la página actual
-            .Take(tamanoPagina) 
-            .ToList();
-    }
-
-    // Método que maneja el evento onchange del select para cambiar el criterio de ordenación
-    private void ActualizarListaClientes(ChangeEventArgs evento)
-    {
-        // Actualizo el criterio de ordenación con el valor seleccionado
-        ordenSeleccionado = evento.Value.ToString();
-
-        // Recargar los clientes según el nuevo criterio
-        IrAPagina(paginaActual); 
-    }
-
-    // Método para confirmar la eliminación de un cliente
-    public async Task ConfirmarEliminar(string dni)
-    {
-        var confirmacion = await Swal.FireAsync(new SweetAlertOptions
-            {
-                Title = "¿Desea eliminar este cliente?",
-                Text = "Esta acción no se puede deshacer.",
-                Icon = SweetAlertIcon.Warning,
-                ShowCancelButton = true,
-                ConfirmButtonText = "Sí, eliminar",
-                CancelButtonText = "Cancelar"
-            });
-
-        if (confirmacion.IsConfirmed)
-        {
-            // Si se confirma se elimina el cliente
-            await EliminarCliente(dni); 
-        }
-    }
-
-    // Método para eliminar un cliente
-    public async Task EliminarCliente(string dni)
+    // Métodos de acción para baja y reactivación
+    private async Task DarBaja(string dni)
     {
         try
         {
-            // Llamo a la API para eliminar el cliente
-            var respuesta = await Http.DeleteAsync($"https://localhost:7123/api/clientes/{dni}");
+            // Usamos `PostAsJsonAsync<object>` para indicar que el cuerpo de la solicitud es un objeto vacío.
+            var respuesta = await Http.PostAsJsonAsync<object>($"https://localhost:7123/api/clientes/dar-baja/{dni}", null);
             if (respuesta.IsSuccessStatusCode)
             {
-                await Swal.FireAsync("Éxito", "El cliente se ha eliminado correctamente.", SweetAlertIcon.Success);
-                // Recargo la lista de clientes
-                await CargarClientes(); 
+                await Swal.FireAsync("Éxito", "Cliente dado de baja con éxito.", SweetAlertIcon.Success);
+                await OnInitializedAsync(); // Recargar lista
             }
             else
             {
-                await Swal.FireAsync("Error", "No se pudo eliminar el cliente.", SweetAlertIcon.Error);
+                var error = await respuesta.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
             }
         }
         catch (Exception ex)
         {
-            // Mostrar error si ocurre alguna excepción
-            await Swal.FireAsync("Error", $"Error al eliminar el cliente: {ex.Message}", SweetAlertIcon.Error);
+            await Swal.FireAsync("Error", $"Error al dar de baja al cliente: {ex.Message}", SweetAlertIcon.Error);
         }
     }
 
-    // Método para navegar a la página de Crear cliente
-    public void IrACrearCliente()
+    private async Task ReactivarCliente(string dni)
     {
-        Navegador.NavigateTo("/crear-cliente");
+        try
+        {
+            // Usamos `PostAsJsonAsync<object>` para indicar que el cuerpo de la solicitud es un objeto vacío.
+            var respuesta = await Http.PostAsJsonAsync<object>($"https://localhost:7123/api/clientes/reactivar/{dni}", null);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await Swal.FireAsync("Éxito", "Cliente reactivado con éxito.", SweetAlertIcon.Success);
+                await OnInitializedAsync(); // Recargar lista
+            }
+            else
+            {
+                var error = await respuesta.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync("Error", $"Error al reactivar el cliente: {ex.Message}", SweetAlertIcon.Error);
+        }
     }
 
-    // Método para navegar a la páginas de recibos
-    public void IrARecibos()
+    // Redirigir a la página de ver cliente
+    private void VerCliente(string dni)
     {
-        Navegador.NavigateTo("/recibos"); 
+        Navegador.NavigateTo($"/ver-cliente/{dni}");
+    }
+
+    // Redirigir a la página de edición de cliente
+    private void EditarCliente(string dni)
+    {
+        Navegador.NavigateTo($"/editar-cliente/{dni}");
+    }
+
+    // Redirigir a la página de crear cliente
+    private void CrearCliente()
+    {
+        Navegador.NavigateTo("/crear-cliente");
     }
 }

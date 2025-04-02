@@ -5,7 +5,7 @@
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
 
-<h3>Detalles del cliente</h3>
+<h3>Detalles del Cliente</h3>
 
 <button class="btn btn-secondary mb-3" @onclick="Volver">Volver</button>
 
@@ -17,46 +17,27 @@ else
 {
     <div class="card mb-3">
         <div class="card-header">
-            <strong>@cliente.Nombre (@cliente.DNI)</strong>
+            <strong>@cliente.Nombre @cliente.Apellido1 @cliente.Apellido2 (@cliente.DNI)</strong>
         </div>
         <div class="card-body">
             <p><strong>Tipo:</strong> @cliente.Tipo</p>
             <p><strong>Cuota Máxima:</strong> @(cliente.CuotaMaxima.HasValue ? cliente.CuotaMaxima.Value.ToString("C") : "N/A")</p>
             <p><strong>Fecha de Alta:</strong> @cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</p>
+            <p><strong>Fecha de Baja:</strong> @(cliente.FechaBaja.HasValue ? cliente.FechaBaja.Value.ToString("yyyy/MM/dd HH:mm:ss") : "Activo")</p>
         </div>
     </div>
 
-    <h4>Recibos Asociados</h4>
-    @if (cliente.Recibos == null || !cliente.Recibos.Any())
+    @if (cliente.FechaBaja.HasValue)
     {
-        <p><em>No hay recibos asociados a este cliente.</em></p>
+        <button class="btn btn-success" @onclick="ReactivarCliente">Reactivar Cliente</button>
     }
     else
     {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Número de Recibo</th>
-                    <th>Importe</th>
-                    <th>Fecha de Emisión</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var recibo in cliente.Recibos)
-                {
-                    <tr>
-                        <td>@recibo.NumeroRecibo</td>
-                        <td>@recibo.Importe</td>
-                        <td>@recibo.FechaEmision.ToString("yyyy/MM/dd HH:mm:ss")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <button class="btn btn-danger" @onclick="DarBaja">Dar Baja al Cliente</button>
     }
 }
 
 @code {
-    // Parámetro para la URL que es el DNI del cliente a ver (pongo el [Parameter] porque da error sino se pone)
     [Parameter] public string dni { get; set; }
     private Cliente cliente;
 
@@ -64,14 +45,58 @@ else
     {
         try
         {
-            // Hago la petición para cargar el cliente del que luego formatearé y mostraré sus datos
             cliente = await Http.GetFromJsonAsync<Cliente>($"https://localhost:7123/api/clientes/{dni}");
         }
         catch (Exception ex)
         {
-            // Manejo de excepciones y vuelvo a /clientes si hay error
             await Swal.FireAsync("Error", $"Error al cargar el cliente: {ex.Message}", SweetAlertIcon.Error);
             Volver();
+        }
+    }
+
+    private async Task DarBaja()
+    {
+        try
+        {
+            // Especificamos que el tipo de cuerpo es 'object' para resolver el problema de la inferencia de tipos
+            var respuesta = await Http.PostAsJsonAsync<object>($"https://localhost:7123/api/clientes/dar-baja/{cliente.DNI}", null);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await Swal.FireAsync("Éxito", "Cliente dado de baja con éxito.", SweetAlertIcon.Success);
+                Volver();
+            }
+            else
+            {
+                var error = await respuesta.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync("Error", $"Error al dar de baja al cliente: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task ReactivarCliente()
+    {
+        try
+        {
+            // Especificamos que el tipo de cuerpo es 'object' para resolver el problema de la inferencia de tipos
+            var respuesta = await Http.PostAsJsonAsync<object>($"https://localhost:7123/api/clientes/reactivar/{cliente.DNI}", null);
+            if (respuesta.IsSuccessStatusCode)
+            {
+                await Swal.FireAsync("Éxito", "Cliente reactivado con éxito.", SweetAlertIcon.Success);
+                Volver();
+            }
+            else
+            {
+                var error = await respuesta.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync("Error", $"Error al reactivar al cliente: {ex.Message}", SweetAlertIcon.Error);
         }
     }
 
@@ -80,3 +105,4 @@ else
         Navegador.NavigateTo("/clientes");
     }
 }
+

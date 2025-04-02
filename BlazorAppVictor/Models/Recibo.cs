@@ -1,4 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using BlazorAppVictor.Converters;
 
 namespace BlazorAppVictor.Models
 {
@@ -8,11 +11,16 @@ namespace BlazorAppVictor.Models
     public class Recibo
     {
         /// <summary>
-        /// Número de recibo único que actúa como PK (primary key).
+        /// Identificador único del recibo (PK).
         /// </summary>
         [Key]
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Número de recibo único que actúa como PK (primary key).
+        /// </summary>
         [Required(ErrorMessage = "El número de recibo es requerido")]
-        public string NumeroRecibo { get; set; }
+        public required string NumeroRecibo { get; set; }
 
         /// <summary>
         /// Importe del recibo.
@@ -25,13 +33,15 @@ namespace BlazorAppVictor.Models
         /// Fecha de emisión del recibo.
         /// </summary>
         [Required(ErrorMessage = "Se requiere la fecha de emisión")]
+        [JsonConverter(typeof(CustomDateTimeConverter))]
         public DateTime FechaEmision { get; set; }
 
         /// <summary>
-        /// DNI del cliente al que pertenece el recibo.
+        /// Id del cliente al que pertenece el recibo.
         /// </summary>
-        [Required(ErrorMessage = "Se requiere el DNI del cliente correspondiente")]
-        public string ClienteDNI { get; set; }
+        [Required(ErrorMessage = "Se requiere el Id del cliente correspondiente")]
+        [ForeignKey("Cliente")]
+        public int ClienteId { get; set; }
 
         /// <summary>
         /// Propiedad de navegación con el cliente asociado al recibo.

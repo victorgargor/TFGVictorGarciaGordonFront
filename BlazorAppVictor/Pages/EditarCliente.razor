@@ -1,4 +1,4 @@
-﻿@page "/editar-cliente/{dni}"
+﻿@page "/editar-cliente/{ClienteId}"
 @using BlazorAppVictor.Models
 @using System.Text.RegularExpressions
 @using System.Net.Http.Json
@@ -6,209 +6,180 @@
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
 
-<style>
-	/* Contenedor para el formulario */
-	.form-container {
-		max-width: 600px;
-		margin: 30px auto;
-		padding: 20px;
-		border: 1px solid #ddd;
-		border-radius: 8px;
-		background-color: #f9f9f9;
-		box-shadow: 0 0 10px rgba(0,0,0,0.1);
-	}
-
-	/* Título */
-	h3 {
-		font-size: 2rem;
-		text-align: center;
-		margin-top: 20px;
-		margin-bottom: 20px;
-	}
-
-	/* Botón Volver */
-	.volver-btn {
-		display: block;
-		margin: 0 auto 20px auto;
-	}
-
-	/* Inputs */
-	.form-label {
-		font-weight: bold;
-	}
-
-	.mb-3 {
-		margin-bottom: 1rem;
-	}
-</style>
-
-<h3>Editar Cliente</h3>
+<h3>Editar cliente</h3>
 
 <!-- Botón Volver -->
-<button class="btn btn-secondary volver-btn" @onclick="Volver">Volver</button>
+<button class="btn btn-secondary" @onclick="Volver">Volver</button>
 
 <!-- Contenedor -->
 <div class="form-container">
-	<!-- Formulario -->
-	<form @onsubmit="HandleSubmit">
-		<!-- DNI (deshabilitado, no se puede editar) -->
-		<div class="mb-3">
-			<label for="DNI" class="form-label">DNI (*)</label>
-			<input id="DNI" class="form-control" type="text" @bind="cliente.DNI" disabled />
-		</div>
+    <!-- Formulario -->
+    <form @onsubmit="HandleSubmit">
+        <!-- DNI -->
+        <div class="mb-3">
+            <label for="DNI" class="form-label">DNI (*)</label>
+            <input id="DNI" class="form-control" type="text" @bind="cliente.DNI" />
+        </div>
 
-		<!-- Nombre completo -->
-		<div class="mb-3">
-			<label for="Nombre" class="form-label">Nombre completo (*)</label>
-			<input id="Nombre" class="form-control" type="text" @bind="cliente.Nombre" />
-		</div>
+        <!-- Nombre completo -->
+        <div class="mb-3">
+            <label for="Nombre" class="form-label">Nombre completo (*)</label>
+            <input id="Nombre" class="form-control" type="text" @bind="cliente.Nombre" />
+        </div>
 
-		<!-- Tipo de cliente -->
-		<div class="mb-3">
-			<label for="Tipo" class="form-label">Tipo de cliente</label>
-			<select id="Tipo" class="form-control" @bind="cliente.Tipo">
-				<option value="">Seleccione...</option>
-				<option value="REGISTRADO">REGISTRADO</option>
-				<option value="SOCIO">SOCIO</option>
-			</select>
-		</div>
+        <!-- Tipo de cliente -->
+        <div class="mb-3">
+            <label for="Tipo" class="form-label">Tipo de cliente</label>
+            <select id="Tipo" class="form-control" @bind="cliente.Tipo">
+                <option value="">Seleccione...</option>
+                <option value="REGISTRADO">REGISTRADO</option>
+                <option value="SOCIO">SOCIO</option>
+            </select>
+        </div>
 
-		<!-- Cuota máxima (solo para clientes REGISTRADOS) -->
-		@if (cliente.Tipo == TipoCliente.REGISTRADO)
-		{
-			<div class="mb-3">
-				<label for="CuotaMaxima" class="form-label">Cuota máxima (*)</label>
-				<input id="CuotaMaxima" class="form-control" type="number" step="any" @bind="cliente.CuotaMaxima" />
-			</div>
-		}
+        <!-- Cuota máxima (solo para clientes REGISTRADOS) -->
+        @if (cliente.Tipo == TipoCliente.REGISTRADO)
+        {
+            <div class="mb-3">
+                <label for="CuotaMaxima" class="form-label">Cuota máxima (*)</label>
+                <input id="CuotaMaxima" class="form-control" type="number" step="any" @bind="cliente.CuotaMaxima" />
+            </div>
+        }
 
-		<!-- Fecha de alta -->
-		<div class="mb-3">
-			<label for="FechaAlta" class="form-label">Fecha de alta (yyyy/MM/dd HHmmss) (*)</label>
-			<input id="FechaAlta" class="form-control" type="text" @bind="fechaAltaTexto" />
-		</div>
+        <!-- Fecha de alta -->
+        <div class="mb-3">
+            <label for="FechaAlta" class="form-label">Fecha de alta (yyyy/MM/dd HHmmss) (*)</label>
+            <input id="FechaAlta" class="form-control" type="text" @bind="fechaAltaTexto" />
+        </div>
 
-		<!-- Botón Actualizar -->
-		<button type="submit" class="btn btn-success">Actualizar cliente</button>
-	</form>
+        <!-- Botón Crear -->
+        <button type="submit" class="btn btn-success">Actualizar cliente</button>
+    </form>
 </div>
 
 @code {
-	// Parámetro de la ruta con el DNI del cliente que se va a editar.
-	[Parameter] public string dni { get; set; }
+    [Parameter]
+    public int ClienteId { get; set; }
 
-	// Instancio un Cliente para el binding.
-	private Cliente cliente = new Cliente();
+    // Inicialización de cliente con valores predeterminados
+    private Cliente cliente = new Cliente
+        {
+            DNI = string.Empty,
+            Nombre = string.Empty,
+            Tipo = TipoCliente.REGISTRADO, // O SOCIO, dependiendo del caso
+            FechaAlta = DateTime.UtcNow
+        };
 
-	// Para almacenar la fecha de alta en formato texto.
-	private string? fechaAltaTexto;
+    private string? fechaAltaTexto;
 
-	/// <summary>
-	/// Manejador del evento de envío del formulario.
-	/// Previene el comportamiento por defecto y llama a ActualizarCliente.
-	/// </summary>
-	/// <param name="e">Argumentos del evento.</param>
-	private async Task HandleSubmit(EventArgs e)
-	{
-		await ActualizarCliente();
-	}
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargar los datos del cliente cuando se inicializa el componente
+        await CargarCliente();
+    }
 
-	/// <summary>
-	/// En el método OnInitializedAsync se carga el cliente desde la API usando el DNI.
-	/// Se prepopula el campo de fecha con el formato "yyyy/MM/dd HHmmss".
-	/// </summary>
-	protected override async Task OnInitializedAsync()
-	{
-		try
-		{
-			// Cargo el cliente a editar.
-			cliente = await Http.GetFromJsonAsync<Cliente>($"https://localhost:7123/api/clientes/{dni}");
+    private async Task CargarCliente()
+    {
+        try
+        {
+            // Obtener los datos del cliente desde la API
+            var response = await Http.GetFromJsonAsync<Cliente>($"https://localhost:7123/api/clientes/{ClienteId}");
 
-			// Si el cliente no es null convierto la fecha la cadena en el formato "yyyy/MM/dd HHmmss"
-			if (cliente != null)
-			{
-				fechaAltaTexto = cliente.FechaAlta.ToString("yyyy/MM/dd HHmmss");
-			}
-		}
-		catch (Exception ex)
-		{
-			// Manejo de excepciones
-			await Swal.FireAsync("Error", $"Error al cargar el cliente: {ex.Message}", SweetAlertIcon.Error);
-			Navegador.NavigateTo("/clientes");
-		}
-	}
+            // Verificamos si la respuesta es válida y asignamos los datos al cliente
+            if (response != null)
+            {
+                cliente = response;
 
-	/// <summary>
-	/// Valida los campos, convierte la fecha a UTC y envía la actualización a la API.
-	/// </summary>
-	private async Task ActualizarCliente()
-	{
-		// Valido que se introduzca un nombre
-		if (string.IsNullOrWhiteSpace(cliente.Nombre))
-		{
-			await Swal.FireAsync("Error", "El nombre del cliente es obligatorio", SweetAlertIcon.Error);
-			return;
-		}
+                // Convertir la fecha de alta a texto para mostrarla en el formulario
+                fechaAltaTexto = cliente.FechaAlta.ToString("yyyy/MM/dd HHmmss");
+            }
+            else
+            {
+                await Swal.FireAsync("Error", "No se ha encontrado el cliente.", SweetAlertIcon.Error);
+                Navegador.NavigateTo("/clientes");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Manejo de excepciones
+            await Swal.FireAsync("Error", $"Error al cargar los datos del cliente: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
 
-		// Si el cliente es REGISTRADO debe tener una cuota máxima válida y debe de ser un número positivo mayor que 0)
-		if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
-		{
-			await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida (número positivo mayor que 0)", SweetAlertIcon.Error);
-			return;
-		}
+    private async Task HandleSubmit(EventArgs e)
+    {
+        // Validar y actualizar cliente
+        await ActualizarCliente();
+    }
 
-		// Si es SOCIO no deben tener cuota máxima
-		if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
-		{
-			await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
-			return;
-		}
+    private async Task ActualizarCliente()
+    {
+        // Validaciones antes de enviar
 
-		// Valido que la fecha se ponga y que tenga el formato "yyyy/MM/dd HHmmss"
-		if (string.IsNullOrWhiteSpace(fechaAltaTexto))
-		{
-			await Swal.FireAsync("Error", "La fecha de alta es obligatoria", SweetAlertIcon.Error);
-			return;
-		}
-		if (!DateTime.TryParseExact(fechaAltaTexto, "yyyy/MM/dd HHmmss",
-				System.Globalization.CultureInfo.InvariantCulture,
-				System.Globalization.DateTimeStyles.None, out DateTime fechaAlta))
-		{
-			await Swal.FireAsync("Error", "La fecha de alta debe tener el formato 'yyyy/MM/dd HHmmss' y valores lógicos.", SweetAlertIcon.Error);
-			return;
-		}
+        // Valido que se introduzca un nombre
+        if (string.IsNullOrWhiteSpace(cliente.Nombre))
+        {
+            await Swal.FireAsync("Error", "El nombre del cliente es obligatorio", SweetAlertIcon.Error);
+            return;
+        }
 
-		// Convierto la fecha a UTC para la base de datos.
-		cliente.FechaAlta = DateTime.SpecifyKind(fechaAlta, DateTimeKind.Utc);
+        // Si el cliente es REGISTRADO debe tener una cuota máxima válida y debe de ser un número positivo mayor que 0)
+        if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
+        {
+            await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida (número positivo mayor que 0)", SweetAlertIcon.Error);
+            return;
+        }
 
-		try
-		{
-			// Envio con PUT la actualización a la API.
-			var respuesta = await Http.PutAsJsonAsync($"https://localhost:7123/api/clientes/{cliente.DNI}", cliente);
-			if (respuesta.IsSuccessStatusCode)
-			{
-				// Si es exitoso, redirigir al listado de clientes
-				Volver();
-			}
-			else
-			{
-				// Si ocurre un error lo muestro
-				var error = await respuesta.Content.ReadAsStringAsync();
-				await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
-			}
-		}
-		catch (Exception ex)
-		{
-			// Manejo de excepciones
-			await Swal.FireAsync("Error", $"Error al actualizar el cliente: {ex.Message}", SweetAlertIcon.Error);
-		}
-	}
+        // Si es SOCIO no deben tener cuota máxima
+        if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
+        {
+            await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
+            return;
+        }
 
-	/// <summary>
-	/// Navega de regreso a la lista de clientes.
-	/// </summary>
-	public void Volver()
-	{
-		Navegador.NavigateTo("/clientes");
-	}
+        // Valido que la fecha se ponga y que tenga el formato "yyyy/MM/dd HHmmss"
+        if (string.IsNullOrWhiteSpace(fechaAltaTexto))
+        {
+            await Swal.FireAsync("Error", "La fecha de alta es obligatoria", SweetAlertIcon.Error);
+            return;
+        }
+        if (!DateTime.TryParseExact(fechaAltaTexto, "yyyy/MM/dd HHmmss",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out DateTime fechaAlta))
+        {
+            await Swal.FireAsync("Error", "La fecha de alta debe tener el formato 'yyyy/MM/dd HHmmss' y valores lógicos.", SweetAlertIcon.Error);
+            return;
+        }
+
+        // Convierto la fecha a UTC para la base de datos
+        cliente.FechaAlta = DateTime.SpecifyKind(fechaAlta, DateTimeKind.Utc);
+
+        try
+        {
+            // Enviar el cliente actualizado a la API
+            var respuesta = await Http.PutAsJsonAsync($"https://localhost:7123/api/clientes/{cliente.Id}", cliente);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                // Si es exitoso, redirigir al listado de clientes
+                Volver();
+            }
+            else
+            {
+                // Si ocurre un error lo muestro
+                var error = await respuesta.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Manejo de excepciones
+            await Swal.FireAsync("Error", $"Error al actualizar el cliente: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
+
+    public void Volver()
+    {
+        Navegador.NavigateTo("/clientes");
+    }
 }

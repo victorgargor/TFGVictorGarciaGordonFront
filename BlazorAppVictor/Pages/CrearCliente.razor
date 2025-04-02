@@ -42,7 +42,7 @@
 	}
 </style>
 
-<h3>Crear cliente</h3>
+<h3>Crear Cliente</h3>
 
 <!-- Botón Volver -->
 <button class="btn btn-secondary volver-btn" @onclick="Volver">Volver</button>
@@ -61,6 +61,17 @@
 		<div class="mb-3">
 			<label for="Nombre" class="form-label">Nombre completo (*)</label>
 			<input id="Nombre" class="form-control" type="text" @bind="cliente.Nombre" />
+		</div>
+
+		<!-- Apellidos -->
+		<div class="mb-3">
+			<label for="Apellido1" class="form-label">Apellido 1</label>
+			<input id="Apellido1" class="form-control" type="text" @bind="cliente.Apellido1" />
+		</div>
+
+		<div class="mb-3">
+			<label for="Apellido2" class="form-label">Apellido 2</label>
+			<input id="Apellido2" class="form-control" type="text" @bind="cliente.Apellido2" />
 		</div>
 
 		<!-- Tipo de cliente -->
@@ -84,18 +95,24 @@
 
 		<!-- Fecha de alta -->
 		<div class="mb-3">
-			<label for="FechaAlta" class="form-label">Fecha de alta (yyyy/MM/dd HHmmss) (*)</label>
+			<label for="FechaAlta" class="form-label">Fecha de alta (yyyy/MM/dd HH:mm:ss) (*)</label>
 			<input id="FechaAlta" class="form-control" type="text" @bind="fechaAltaTexto" />
 		</div>
 
 		<!-- Botón Crear -->
-		<button type="submit" class="btn btn-success">Crear cliente</button>
+		<button type="submit" class="btn btn-success">Crear Cliente</button>
 	</form>
 </div>
 
 @code {
-	// Instancia del modelo para el binding.
-	private Cliente cliente = new Cliente();
+	// Instancia del modelo para el binding. Inicializar las propiedades requeridas
+	private Cliente cliente = new Cliente
+		{
+			DNI = "", // Inicializar con un valor vacío
+			Nombre = "", // Inicializar con un valor vacío
+			Tipo = TipoCliente.REGISTRADO, // Iniciar con un valor predeterminado
+			FechaAlta = DateTime.UtcNow // Inicializar con una fecha por defecto
+		};
 	// Propiedad para almacenar la fecha de alta en formato de texto.
 	private string? fechaAltaTexto;
 
@@ -116,59 +133,60 @@
 	private async Task EnviarCliente()
 	{
 		// Validación del DNI
-		// Si está vacío
 		if (string.IsNullOrWhiteSpace(cliente.DNI))
 		{
 			await Swal.FireAsync("Error", "El DNI es obligatorio", SweetAlertIcon.Error);
 			return;
 		}
-		// Si no son 8 dígitos seguidos de una letra
+
+		// Validación del formato del DNI
 		if (!Regex.IsMatch(cliente.DNI, @"^\d{8}[A-Za-z]$"))
 		{
 			await Swal.FireAsync("Error", "El DNI debe tener 8 dígitos seguidos de una letra", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Valido que se introduzca un nombre
+		// Validación del nombre completo
 		if (string.IsNullOrWhiteSpace(cliente.Nombre))
 		{
 			await Swal.FireAsync("Error", "El nombre del cliente es obligatorio", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Si el cliente es REGISTRADO debe tener una cuota máxima válida y debe de ser un número positivo mayor que 0)
+		// Validación de la cuota máxima para clientes REGISTRADOS
 		if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
 		{
 			await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida (número positivo mayor que 0)", SweetAlertIcon.Error);
 			return;
 		}
-		// Si es SOCIO no deben tener cuota máxima
+
+		// Validación para clientes SOCIO (no deben tener cuota máxima)
 		if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
 		{
 			await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Valido que la fecha se ponga y que tenga el formato "yyyy/MM/dd HHmmss"
+		// Validación de la fecha de alta
 		if (string.IsNullOrWhiteSpace(fechaAltaTexto))
 		{
 			await Swal.FireAsync("Error", "La fecha de alta es obligatoria", SweetAlertIcon.Error);
 			return;
 		}
-		if (!DateTime.TryParseExact(fechaAltaTexto, "yyyy/MM/dd HHmmss",
+		if (!DateTime.TryParseExact(fechaAltaTexto, "yyyy/MM/dd HH:mm:ss",
 				System.Globalization.CultureInfo.InvariantCulture,
 				System.Globalization.DateTimeStyles.None, out DateTime fechaAlta))
 		{
-			await Swal.FireAsync("Error", "La fecha de alta debe tener el formato 'yyyy/MM/dd HHmmss' y valores lógicos.", SweetAlertIcon.Error);
+			await Swal.FireAsync("Error", "La fecha de alta debe tener el formato 'yyyy/MM/dd HH:mm:ss' y valores lógicos.", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Convierto la fecha a UTC para la base de datos
+		// Convertir la fecha a UTC para la base de datos
 		cliente.FechaAlta = DateTime.SpecifyKind(fechaAlta, DateTimeKind.Utc);
 
 		try
 		{
-			// Envio los datos a la API
+			// Enviar los datos del cliente a la API
 			var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/clientes", cliente);
 			if (respuesta.IsSuccessStatusCode)
 			{
@@ -177,7 +195,7 @@
 			}
 			else
 			{
-				// Si ocurre un error lo muestro
+				// Si ocurre un error, mostrarlo
 				var error = await respuesta.Content.ReadAsStringAsync();
 				await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
 			}
