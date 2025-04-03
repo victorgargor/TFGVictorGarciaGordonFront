@@ -1,104 +1,345 @@
 ﻿@page "/clientes"
 @using BlazorAppVictor.Models
-@using System.Net.Http.Json
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
 
-<h3>Lista de Clientes</h3>
-
+<!-- CSS para la tabla y la paginación -->
 <style>
-    table tbody tr td {
+    /* Estilo para la tabla */
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed; /* Esto evita que la tabla cambie de tamaño cuando cambia el contenido */
+    }
+
+    td, th {
+        height: 65px !important;
+        box-sizing: border-box;
+        padding: 0;
         vertical-align: middle !important;
+    }
+
+        /* Alineación de los botones dentro de las celdas */
+        td.d-flex {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            padding-left: 35px; /* Espacio a la izquierda de los iconos */
+            padding-right: 35px; /* Espacio igual al de la Fecha de baja */
+        }
+
+    /* Estilo de los botones */
+    button {
+        height: 40px;
+        padding: 0;
+        border: none;
+        background: none;
+    }
+
+    i {
+        font-size: 20px;
+    }
+
+    /* Ajuste específico para la columna Cuota máxima */
+    td.text-end {
+        width: 150px;
+        padding-right: 65px;
+        box-sizing: border-box;
+        text-align: right;
+    }
+
+    /* Estilo para el formulario de búsqueda */
+    .busqueda-form {
+        margin-bottom: 20px;
+    }
+
+    /* Estilo para los botones de paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+
+    /* Ajuste para la tabla sin scroll */
+    .table-container {
+        max-height: none; /* Elimina el máximo de altura */
+        margin-bottom: 30px; /* Para separar la tabla de la paginación */
+    }
+
+    /* Ajustar tamaños de los inputs */
+    .input-busqueda {
+        width: 100% !important;
+        max-width: 600px; /* El input de búsqueda es tres veces más grande */
+    }
+
+    .fechas-container {
+        display: flex;
+        margin-left: 30px;
+        gap: 10px; /* Espaciado más pequeño entre los inputs */
+    }
+
+        .fechas-container input {
+            width: 150px; /* Ajusta el ancho */
+            height: 35px; /* Ajusta la altura */
+            font-size: 16px; /* Tamaño del texto */
+            text-align: center;
+        }
+
+    .input-select {
+        width: 100%;
+        max-width: 175px; /* Ajusta el select al tamaño de los inputs de fecha */
+        text-align: center;
+        text-align-last: center; /* Asegura que la opción seleccionada también esté centrada */
     }
 </style>
 
-<button class="btn btn-primary mb-3" @onclick="CrearCliente">Nuevo Cliente</button>
+<h3>Clientes</h3>
 
-@if (clientes == null)
-{
-    <p><em>Cargando clientes...</em></p>
-}
-else if (!clientes.Any())
-{
-    <p><em>No hay clientes registrados.</em></p>
-}
-else
-{
+<!-- Botón Crear Cliente -->
+<button class="btn btn-primary mb-3" @onclick="CrearCliente">Crear Cliente</button>
+
+<!-- Formulario de búsqueda -->
+<div class="busqueda-form mb-3">
+    <div class="row">
+        <div class="col-md-2">
+            <select @bind="estadoSeleccionado" class="form-control input-select">
+                <option value="todos">Todos</option>
+                <option value="activos">Activos</option>
+                <option value="baja">De baja</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input placeholder="Buscar por DNI, nombre o apellidos" @bind="terminoBusqueda" class="form-control input-busqueda" />
+        </div>
+        <div class="col-md-4 fechas-container">
+            <input type="date" @bind="fechaInicio" class="form-control input-fecha" />
+            <input type="date" @bind="fechaFin" class="form-control input-fecha" />
+        </div>
+        <div class="col-md-3">
+            <button class="btn" @onclick="BuscarClientes"><i class="bi bi-search fs-3"></i></button>
+        </div>
+    </div>
+</div>
+
+<!-- Contenedor de la tabla -->
+<div class="table-container">
     <table class="table table-striped">
         <thead>
             <tr>
                 <th class="text-start"></th>
-                <th class="text-start">DNI</th>
+                <th class="text-start" @onclick='() => OrdenarPor("dni")'>DNI</th>
                 <th class="text-start">Nombre</th>
                 <th class="text-start">Apellido 1</th>
                 <th class="text-start">Apellido 2</th>
                 <th class="text-start">Tipo</th>
-                <th class="text-start">Cuota Máxima</th> <!-- Alineación a la derecha para esta columna -->
-                <th class="text-start">Fecha de Alta</th>
-                <th class="text-start">Fecha de Baja</th>
+                <th class="text-start">Cuota máxima</th>
+                <th class="text-start" @onclick='() => OrdenarPor("fecha")'>Fecha de alta</th>
+                <th class="text-start">Fecha de baja</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var cliente in clientes)
+            @if (clientes == null)
             {
                 <tr>
-                    <td class="d-flex justify-content-start">
-                        <button class="btn btn-info btn-sm ms-2" @onclick="() => VerCliente(cliente.DNI)">Ver</button>
-                        <button class="btn btn-sm ms-2"><i class="bi bi-pencil fs-3"></i></button>
-                        <button class="btn btn-sm ms-2"><i class="bi bi-person-x fs-3"></i></button>
-                        @if (cliente.FechaBaja.HasValue)
-                        {
-                            <button class="btn btn-success btn-sm" @onclick="() => ReactivarCliente(cliente.DNI)">Reactivar</button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-danger btn-sm" @onclick="() => DarBaja(cliente.DNI)">Dar Baja</button>
-                        }
-                    </td>
-                    <td class="text-start">@cliente.DNI</td>
-                    <td class="text-start">@cliente.Nombre</td>
-                    <td class="text-start">@cliente.Apellido1</td>
-                    <td class="text-start">@cliente.Apellido2</td>
-                    <td class="text-start">@cliente.Tipo</td>
-                    <td class="text-end" style="padding-right: 65px;">
-                        @(cliente.CuotaMaxima.HasValue ? $"{cliente.CuotaMaxima.Value:C2}" : "N/A")
-                    </td>
-                    <td class="text-start">@cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</td> <!-- Fecha con HH:MM:SS -->
-                    <td class="text-start">@(cliente.FechaBaja.HasValue ? cliente.FechaBaja.Value.ToString("yyyy/MM/dd HH:mm:ss") : "N/A")</td> <!-- Fecha con HH:MM:SS -->
+                    <td colspan="9"><em>Cargando clientes...</em></td>
                 </tr>
+            }
+            else if (!clientes.Any())
+            {
+                <tr>
+                    <td colspan="9" class="text-center">No se han encontrado clientes con los criterios seleccionados.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var cliente in PaginaClientes())
+                {
+                    <tr>
+                        <td class="d-flex ml-n2">
+                            <button @onclick="() => VerCliente(cliente.DNI)">
+                                <i class="bi bi-eye" style="color: dodgerblue"></i>
+                            </button>
+                            <button @onclick="() => EditarCliente(cliente.DNI)">
+                                <i class="bi bi-pencil" style="color: yellowgreen"></i>
+                            </button>
+                            <button @onclick="() => DarBaja(cliente.DNI)">
+                                <i class="bi bi-person-x" style="color: red"></i>
+                            </button>
+                            @if (cliente.FechaBaja.HasValue)
+                            {
+                                <button @onclick="() => ReactivarCliente(cliente.DNI)">
+                                    <i class="bi bi-arrow-bar-up"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button @onclick="() => DarBaja(cliente.DNI)">
+                                    <i class="bi bi-arrow-bar-down"></i>
+                                </button>
+                            }
+                        </td>
+                        <td class="text-start">@cliente.DNI</td>
+                        <td class="text-start">@cliente.Nombre</td>
+                        <td class="text-start">@cliente.Apellido1</td>
+                        <td class="text-start">@cliente.Apellido2</td>
+                        <td class="text-start">@cliente.Tipo</td>
+                        <td class="text-end" style="padding-right: 35px;">
+                            @(cliente.CuotaMaxima.HasValue ? $"{cliente.CuotaMaxima.Value:C2}" : "N/A")
+                        </td>
+                        <td class="text-start">@cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                        <td class="text-start">@(cliente.FechaBaja.HasValue ? cliente.FechaBaja.Value.ToString("yyyy/MM/dd HH:mm:ss") : "Activo")</td>
+                    </tr>
+                }
             }
         </tbody>
     </table>
-}
+</div>
+
+<!-- Paginación -->
+<div class="d-flex justify-content-center mt-4">
+    <button class="btn btn-secondary" @onclick="() => CambiarPagina(paginaActual - 1)" disabled="@(!PuedeIrAtras())">Anterior</button>
+    <span class="mx-3 align-self-center">Página @paginaActual de @totalPaginas</span>
+    <button class="btn btn-secondary" @onclick="() => CambiarPagina(paginaActual + 1)" disabled="@(!PuedeIrAdelante())">Siguiente</button>
+</div>
 
 @code {
     private List<Cliente> clientes;
+    private List<Cliente> clientesFiltrados;
+    private string terminoBusqueda = "";
+    private DateTime? fechaInicio = null;
+    private DateTime? fechaFin = null;
+    private string estadoSeleccionado = "activos"; // Por defecto activos
+    private string ordenPor = "dni"; // Orden por DNI por defecto
+    private bool ordenAscendente = true; // Orden ascendente por defecto
+
+    private int paginaActual = 1;
+    private int totalPaginas = 1;
+    private int tamanoPagina = 5;
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarClientes();
+    }
+
+    private async Task CargarClientes()
+    {
         try
         {
-            // Traer los clientes desde la API
-            clientes = await Http.GetFromJsonAsync<List<Cliente>>("https://localhost:7123/api/clientes");
+            await BuscarClientes();
         }
         catch (Exception ex)
         {
+            clientes = new List<Cliente>();
+            clientesFiltrados = new List<Cliente>();
             await Swal.FireAsync("Error", $"Error al cargar los clientes: {ex.Message}", SweetAlertIcon.Error);
         }
     }
 
-    // Métodos de acción para baja y reactivación
+    private List<Cliente> PaginaClientes()
+    {
+        return clientesFiltrados.Skip((paginaActual - 1) * tamanoPagina).Take(tamanoPagina).ToList();
+    }
+
+    private void CambiarPagina(int nuevaPagina)
+    {
+        if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas)
+        {
+            paginaActual = nuevaPagina;
+            FiltrarClientes();
+        }
+    }
+
+    private bool PuedeIrAtras() => paginaActual > 1;
+    private bool PuedeIrAdelante() => paginaActual < totalPaginas;
+
+    private void FiltrarClientes()
+    {
+        // Aquí puedes agregar más filtros si es necesario
+    }
+
+    private async Task BuscarClientes()
+    {
+        try
+        {
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+            {
+                queryParams.Add($"termino={Uri.EscapeDataString(terminoBusqueda)}");
+            }
+            if (fechaInicio.HasValue)
+            {
+                queryParams.Add($"fechaInicio={fechaInicio.Value:yyyy-MM-dd}");
+            }
+            if (fechaFin.HasValue)
+            {
+                queryParams.Add($"fechaFin={fechaFin.Value:yyyy-MM-dd}");
+            }
+            queryParams.Add($"estado={estadoSeleccionado}");
+            queryParams.Add($"orden={ordenPor.ToLower()}");
+
+            var queryString = string.Join("&", queryParams);
+            var url = $"https://localhost:7123/api/clientes?{queryString}";
+
+            var response = await Http.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                clientes = await response.Content.ReadFromJsonAsync<List<Cliente>>();
+                clientesFiltrados = clientes;
+                totalPaginas = (int)Math.Ceiling((double)clientes.Count / tamanoPagina);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Swal.FireAsync("Error", $"Error al buscar los clientes: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
+
+    private void OrdenarPor(string columna)
+    {
+        if (ordenPor == columna)
+        {
+            ordenAscendente = !ordenAscendente;
+        }
+        else
+        {
+            ordenPor = columna;
+            ordenAscendente = true; // Por defecto ascendente al cambiar la columna
+        }
+
+        // Ejecutar la búsqueda de clientes con los nuevos parámetros
+        BuscarClientes();
+    }
+
+    private void VerCliente(string dni)
+    {
+        Navegador.NavigateTo($"/ver-cliente/{dni}");
+    }
+
+    private void EditarCliente(string dni)
+    {
+        Navegador.NavigateTo($"/editar-cliente/{dni}");
+    }
+
     private async Task DarBaja(string dni)
     {
         try
         {
-            // Usamos `PostAsJsonAsync<object>` para indicar que el cuerpo de la solicitud es un objeto vacío.
-            var respuesta = await Http.PostAsJsonAsync<object>($"https://localhost:7123/api/clientes/dar-baja/{dni}", null);
+            var respuesta = await Http.PutAsJsonAsync<object>($"https://localhost:7123/api/clientes/baja/{dni}", null);
             if (respuesta.IsSuccessStatusCode)
             {
                 await Swal.FireAsync("Éxito", "Cliente dado de baja con éxito.", SweetAlertIcon.Success);
-                await OnInitializedAsync(); // Recargar lista
+                await CargarClientes();
             }
             else
             {
@@ -116,12 +357,11 @@ else
     {
         try
         {
-            // Usamos `PostAsJsonAsync<object>` para indicar que el cuerpo de la solicitud es un objeto vacío.
-            var respuesta = await Http.PostAsJsonAsync<object>($"https://localhost:7123/api/clientes/reactivar/{dni}", null);
+            var respuesta = await Http.PutAsJsonAsync<object>($"https://localhost:7123/api/clientes/reactivar/{dni}", null);
             if (respuesta.IsSuccessStatusCode)
             {
                 await Swal.FireAsync("Éxito", "Cliente reactivado con éxito.", SweetAlertIcon.Success);
-                await OnInitializedAsync(); // Recargar lista
+                await CargarClientes();
             }
             else
             {
@@ -135,19 +375,6 @@ else
         }
     }
 
-    // Redirigir a la página de ver cliente
-    private void VerCliente(string dni)
-    {
-        Navegador.NavigateTo($"/ver-cliente/{dni}");
-    }
-
-    // Redirigir a la página de edición de cliente
-    private void EditarCliente(string dni)
-    {
-        Navegador.NavigateTo($"/editar-cliente/{dni}");
-    }
-
-    // Redirigir a la página de crear cliente
     private void CrearCliente()
     {
         Navegador.NavigateTo("/crear-cliente");
