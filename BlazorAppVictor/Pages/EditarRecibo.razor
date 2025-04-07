@@ -1,9 +1,214 @@
-﻿@page "/editar-recibo/{numeroRecibo}"
+﻿@page "/editar-recibo/{id:int}" 
 @using BlazorAppVictor.Models
 @using System.Net.Http.Json
-@inject HttpClient Http
-@inject SweetAlertService Swal
-@inject NavigationManager Navegador
+@using System.Text.Json
+@inject HttpClient Http  
+@inject SweetAlertService Swal 
+@inject NavigationManager Navegador  
+@inject IJSRuntime JSRuntime 
 
-<h3>Editar Recibo</h3>
+<style>
+    /* Contenedor del formulario */
+    .form-container {
+        max-width: 600px;
+        margin: 30px auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
 
+    /* Título */
+    h3 {
+        font-size: 2rem;
+        text-align: center;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    /* Botón Volver */
+    .volver-btn {
+        display: block;
+        margin: 0 auto 20px auto;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+</style>
+
+<h3>Editar recibo</h3>
+
+<!-- Botón Volver -->
+<button class="btn btn-secondary volver-btn" @onclick="Volver">Volver</button>
+
+@if (recibo == null) 
+{
+    <p><em>Cargando recibo...</em></p>
+}
+else 
+{
+    <div class="form-container">
+        <!-- Formulario -->
+        <form @onsubmit="HandleSubmit">
+            <!-- Número de recibo -->
+            <div class="mb-3">
+                <label for="NumeroRecibo" class="form-label">Número de recibo (*)</label>
+                <input id="NumeroRecibo" class="form-control" type="text" @bind="recibo.NumeroRecibo" readonly />
+            </div>
+
+            <!-- Importe -->
+            <div class="mb-3">
+                <label for="Importe" class="form-label">Importe (*)</label>
+                <input id="Importe" class="form-control" type="number" step="0.01" @bind="recibo.Importe" />
+            </div>
+
+            <!-- Fecha de emisión -->
+            <div class="mb-3">
+                <label for="FechaEmision" class="form-label">Fecha de emisión (yyyy/MM/dd HH:mm:ss) (*)</label>
+                <input id="FechaEmision" class="form-control" type="text" @bind="fechaEmisionTexto" />
+            </div>
+
+            <!-- Botón Actualizar -->
+            <button type="submit" class="btn btn-success">Actualizar</button>
+        </form>
+    </div>
+}
+
+@code {
+    // Parámetro para el Id del recibo
+    [Parameter] public int id { get; set; }
+
+    // Objeto para almacenar los datos del recibo
+    private Recibo recibo;
+
+    // Objeto para almacenar los datos del cliente
+    private Cliente cliente;
+
+    // Variable para la fecha de emisión en formato de texto
+    private string fechaEmisionTexto = string.Empty;
+
+    // Al inicializar el componente se obtienen los datos del cliente (sessionStorage) y del recibo
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Recupero el cliente almacenado en sessionStorage
+            var clienteJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "cliente");
+
+            if (clienteJson != null)
+            {
+                // Deserializo el cliente
+                cliente = JsonSerializer.Deserialize<Cliente>(clienteJson);  
+            }
+            else
+            {
+                // En caso de error
+                await Swal.FireAsync("Error", "No se encontró información del cliente.", SweetAlertIcon.Error);
+                Navegador.NavigateTo("/clientes");
+                return;
+            }
+
+            // Obtengo los datos del recibo desde la API
+            recibo = await Http.GetFromJsonAsync<Recibo>($"https://localhost:7123/api/recibos/{id}");
+
+            if (recibo == null)
+            {
+                // En caso de error
+                await Swal.FireAsync("Error", "Recibo no encontrado.", SweetAlertIcon.Error);
+                Volver();
+            }
+            else
+            {
+                // Si se encuentra el recibo establezco el formato por defecto "yyyy/MM/dd HH:mm:ss"
+                fechaEmisionTexto = recibo.FechaEmision.ToString("yyyy/MM/dd HH:mm:ss");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Manejo de excepciones
+            await Swal.FireAsync("Error", $"Error al cargar el recibo: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
+
+    // Método para manejar el envío del formulario
+    private async Task HandleSubmit()
+    {
+        await ActualizarRecibo();
+    }
+
+    // Método para actualizar un recibo
+    private async Task ActualizarRecibo()
+    {
+        // Valido que el importe sea mayor a 0
+        if (recibo.Importe <= 0)
+        {
+            await Swal.FireAsync("Error", "El importe debe ser mayor a 0.", SweetAlertIcon.Error);
+            return;
+        }
+
+        // Valido que la fecha de emisión no esté vacía
+        if (string.IsNullOrWhiteSpace(fechaEmisionTexto))
+        {
+            await Swal.FireAsync("Error", "La fecha de emisión es obligatoria.", SweetAlertIcon.Error);
+            return;
+        }
+
+        // Valido el formato de la fecha de emisión (debe ser "yyyy/MM/dd HH:mm:ss")
+        if (!DateTime.TryParseExact(fechaEmisionTexto, "yyyy/MM/dd HH:mm:ss",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out DateTime fechaEmision))
+        {
+            await Swal.FireAsync("Error", "La fecha de emisión debe tener el formato 'yyyy/MM/dd HH:mm:ss' y valores lógicos.", SweetAlertIcon.Error);
+            return;
+        }
+
+        // Asigno la fecha de emisión al recibo en formato UTC
+        recibo.FechaEmision = DateTime.SpecifyKind(fechaEmision, DateTimeKind.Utc);
+
+        // Valido que si el cliente es de tipo REGISTRADO el importe del recibo no supere su cuota máxima
+        if (cliente.Tipo == TipoCliente.REGISTRADO)
+        {
+            if (cliente.CuotaMaxima.HasValue && recibo.Importe > cliente.CuotaMaxima.Value)
+            {
+                await Swal.FireAsync("Error", $"El importe del recibo no puede superar la cuota máxima ({cliente.CuotaMaxima.Value}) del cliente.", SweetAlertIcon.Error);
+                return;
+            }
+        }
+
+        try
+        {
+            // Envio la solicitud para actualizar el recibo
+            var response = await Http.PutAsJsonAsync($"https://localhost:7123/api/recibos/{id}", recibo);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Si se actualizó correctamente, mostrar mensaje de éxito y redirigir a la vista del cliente
+                await Swal.FireAsync("Éxito", "Recibo actualizado correctamente.", SweetAlertIcon.Success);
+                Volver();
+            }
+            else
+            {
+                // Si hay un error, lo muestro
+                var error = await response.Content.ReadAsStringAsync();
+                await Swal.FireAsync("Error", $"Error al actualizar el recibo: {error}", SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Manejo de excepciones
+            await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
+
+    // Método para volver a la página de ver cliente
+    private void Volver()
+    {
+        Navegador.NavigateTo($"/ver-cliente/{cliente.DNI}");
+    }
+}

@@ -2,12 +2,14 @@
 @using BlazorAppVictor.Models
 @using System.Text.RegularExpressions
 @using System.Net.Http.Json
+@using System.Text.Json.Serialization 
+@using System.Text.Json               
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
 
 <style>
-	/* Contenedor para el formulario */
+	/* Contenedor del formulario */
 	.form-container {
 		max-width: 600px;
 		margin: 30px auto;
@@ -32,7 +34,6 @@
 		margin: 0 auto 20px auto;
 	}
 
-	/* Inputs */
 	.form-label {
 		font-weight: bold;
 	}
@@ -47,7 +48,6 @@
 <!-- Botón Volver -->
 <button class="btn btn-secondary volver-btn" @onclick="Volver">Volver</button>
 
-<!-- Contenedor -->
 <div class="form-container">
 	<!-- Formulario -->
 	<form @onsubmit="HandleSubmit">
@@ -57,9 +57,9 @@
 			<input id="DNI" class="form-control" type="text" @bind="cliente.DNI" />
 		</div>
 
-		<!-- Nombre completo -->
+		<!-- Nombre -->
 		<div class="mb-3">
-			<label for="Nombre" class="form-label">Nombre completo (*)</label>
+			<label for="Nombre" class="form-label">Nombre (*)</label>
 			<input id="Nombre" class="form-control" type="text" @bind="cliente.Nombre" />
 		</div>
 
@@ -74,7 +74,7 @@
 			<input id="Apellido2" class="form-control" type="text" @bind="cliente.Apellido2" />
 		</div>
 
-		<!-- Tipo de cliente -->
+		<!-- Tipo -->
 		<div class="mb-3">
 			<label for="Tipo" class="form-label">Tipo de cliente</label>
 			<select id="Tipo" class="form-control" @bind="cliente.Tipo">
@@ -84,7 +84,7 @@
 			</select>
 		</div>
 
-		<!-- Cuota máxima (solo para clientes REGISTRADOS) -->
+		<!-- Cuota máxima -->
 		@if (cliente.Tipo == TipoCliente.REGISTRADO)
 		{
 			<div class="mb-3">
@@ -100,79 +100,76 @@
 		</div>
 
 		<!-- Botón Crear -->
-		<button type="submit" class="btn btn-success">Crear Cliente</button>
+		<button type="submit" class="btn btn-success">Crear</button>
 	</form>
 </div>
 
 @code {
-	// Instancia del modelo para el binding. Inicializar las propiedades requeridas
+	// Inicializo el cliente a valores por defecto (por usar required)
 	private Cliente cliente = new Cliente
 		{
-			DNI = "", // Inicializar con un valor vacío
-			Nombre = "", // Inicializar con un valor vacío
-			Tipo = TipoCliente.REGISTRADO, // Iniciar con un valor predeterminado
-			FechaAlta = DateTime.UtcNow // Inicializar con una fecha por defecto
+			DNI = "",
+			Nombre = "",
+			Tipo = TipoCliente.REGISTRADO,
+			FechaAlta = DateTime.UtcNow
 		};
-	// Propiedad para almacenar la fecha de alta en formato de texto.
+
+	// Variable con la que manejo la fecha de alta como un texto
 	private string? fechaAltaTexto;
 
-	/// <summary>
-	/// Manejador del evento de envío del formulario.
-	/// Se encarga de prevenir el comportamiento por defecto y llamar al método de envío.
-	/// </summary>
-	/// <param name="e">Argumentos del evento.</param>
+	// Clase para deserializar mis errores personalizados de la API 
+	public class ErrorResponse
+	{
+		// Para que coincida con errors del JSON recibido
+		[JsonPropertyName("errors")] 
+		public Dictionary<string, List<string>> Errors { get; set; } = new();
+	}
+
+	// Método que maneja el envío del formulario
 	private async Task HandleSubmit(EventArgs e)
 	{
-		// Como uso el @onsubmit solo se llama a EnviarCliente.
 		await EnviarCliente();
 	}
 
-	/// <summary>
-	/// Valida los campos y envía el cliente a la API.
-	/// </summary>
+	// Método para enviar los datos del cliente a la API
 	private async Task EnviarCliente()
 	{
-		// Validación del DNI
+		// Valido que el DNI no esté vacío
 		if (string.IsNullOrWhiteSpace(cliente.DNI))
 		{
 			await Swal.FireAsync("Error", "El DNI es obligatorio", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Validación del formato del DNI
-		if (!Regex.IsMatch(cliente.DNI, @"^\d{8}[A-Za-z]$"))
-		{
-			await Swal.FireAsync("Error", "El DNI debe tener 8 dígitos seguidos de una letra", SweetAlertIcon.Error);
-			return;
-		}
-
-		// Validación del nombre completo
+		// Valido que el nombre no esté vacío
 		if (string.IsNullOrWhiteSpace(cliente.Nombre))
 		{
 			await Swal.FireAsync("Error", "El nombre del cliente es obligatorio", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Validación de la cuota máxima para clientes REGISTRADOS
+		// Valido la cuota máxima para clientes REGISTRADOS (debe ser mayor que 0)
 		if (cliente.Tipo == TipoCliente.REGISTRADO && (!cliente.CuotaMaxima.HasValue || cliente.CuotaMaxima <= 0))
 		{
 			await Swal.FireAsync("Error", "Los clientes REGISTRADOS deben tener una cuota máxima válida (número positivo mayor que 0)", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Validación para clientes SOCIO (no deben tener cuota máxima)
+		// Valido los SOCIOS (no deben tener cuota máxima)
 		if (cliente.Tipo == TipoCliente.SOCIO && cliente.CuotaMaxima.HasValue)
 		{
 			await Swal.FireAsync("Error", "Los SOCIOS no deben tener una cuota máxima.", SweetAlertIcon.Error);
 			return;
 		}
 
-		// Validación de la fecha de alta
+		// Valido que la fecha de alta no esté vacía
 		if (string.IsNullOrWhiteSpace(fechaAltaTexto))
 		{
 			await Swal.FireAsync("Error", "La fecha de alta es obligatoria", SweetAlertIcon.Error);
 			return;
 		}
+
+		// Valido el formato de la fecha de alta "yyyy/MM/dd HH:mm:ss"
 		if (!DateTime.TryParseExact(fechaAltaTexto, "yyyy/MM/dd HH:mm:ss",
 				System.Globalization.CultureInfo.InvariantCulture,
 				System.Globalization.DateTimeStyles.None, out DateTime fechaAlta))
@@ -181,23 +178,35 @@
 			return;
 		}
 
-		// Convertir la fecha a UTC para la base de datos
+		// Convierto la fecha de alta a formato UTC para almacenarla en la base de datos
 		cliente.FechaAlta = DateTime.SpecifyKind(fechaAlta, DateTimeKind.Utc);
 
 		try
 		{
-			// Enviar los datos del cliente a la API
+			// Envío los datos del cliente a la API
 			var respuesta = await Http.PostAsJsonAsync("https://localhost:7123/api/clientes", cliente);
 			if (respuesta.IsSuccessStatusCode)
 			{
-				// Si es exitoso, redirigir al listado de clientes
+				// Si la creación es exitosa muestro un mensaje y vuelvo a la lista de clientes
+				await Swal.FireAsync("Éxito", "Cliente creado correctamente.", SweetAlertIcon.Success);
 				Volver();
 			}
 			else
 			{
-				// Si ocurre un error, mostrarlo
-				var error = await respuesta.Content.ReadAsStringAsync();
-				await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+				// Si ocurre un error de validación, extraigo los errores personalizados
+				var errorContent = await respuesta.Content.ReadAsStringAsync();
+				var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent);
+
+				// Si no hay errores que se puedan deserializar muestro el contenido completo
+				if (errorResponse?.Errors == null || !errorResponse.Errors.Any())
+				{
+					await Swal.FireAsync("Error", errorContent, SweetAlertIcon.Error);
+					return;
+				}
+
+				// Muestro los errores separados por ","
+				var errorMessage = string.Join(", ", errorResponse.Errors.Select(e => e.Value.FirstOrDefault()));
+				await Swal.FireAsync("Error", errorMessage, SweetAlertIcon.Error);
 			}
 		}
 		catch (Exception ex)
@@ -207,9 +216,7 @@
 		}
 	}
 
-	/// <summary>
-	/// Navega de regreso a la lista de clientes.
-	/// </summary>
+	// Método para volver a la página de clientes
 	public void Volver()
 	{
 		Navegador.NavigateTo("/clientes");
