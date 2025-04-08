@@ -7,8 +7,98 @@
 @inject NavigationManager Navegador
 @inject IJSRuntime JSRuntime  
 
-<h3>Detalles del Cliente</h3>
+<style>
+    /* Box sizing a todo */
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 
+    /* Contenedor principal */
+    .container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 20px;
+    }
+
+    /* Título principal */
+    h3 {
+        text-align: center;
+        font-size: 40px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 50px;
+        margin-bottom: 10px;
+    }
+
+    /* Botones */
+    button {
+        height: 40px;
+        padding: 0;
+        border: none;
+        background: none;
+    }
+
+    /* Paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 15px;
+    }
+
+    /* Tabla */
+    .table-container {
+        max-height: none;
+        margin-bottom: 30px;
+    }
+
+        .table td {
+            vertical-align: middle !important;
+        }
+
+    /* Estilos para la tabla */
+    table {
+        margin-top: 75px;
+        margin-left: auto;
+        margin-right: auto; /* Centrado horizontal */
+    }
+
+    /* Iconos: tamaño y márgenes */
+    .table-container button i {
+        font-size: 20px;
+        margin-right: 5px;
+        margin-left: 10px;
+    }
+    .table-container button {
+        margin-right: 10px;
+    }
+
+    .btn-crear {
+        height: 35px;
+        font-size: 16px;
+        padding: 0 15px;
+        border-radius: 5px;
+        background-color: #007bff;
+        border: none;
+        color: white;
+        font-weight: bold;
+        transition: background-color 0.3s, box-shadow 0.3s;
+        display: inline-block;
+        margin-bottom: 15px;
+        vertical-align: middle;
+    }
+</style>
+
+
+<h3>Detalles del cliente</h3>
+
+<!-- Botón Volver -->
 <button class="btn btn-secondary mb-3" @onclick="Volver">Volver</button>
 
 @if (cliente == null)
@@ -17,25 +107,26 @@
 }
 else
 {
+    <!-- Información del cliente -->
     <div class="card mb-3">
         <div class="card-header">
             <strong>@cliente.Nombre @cliente.Apellido1 @cliente.Apellido2 (@cliente.DNI)</strong>
         </div>
         <div class="card-body">
             <p><strong>Tipo:</strong> @cliente.Tipo</p>
-            <p><strong>Cuota Máxima:</strong> @(cliente.CuotaMaxima.HasValue ? cliente.CuotaMaxima.Value.ToString("C") : "N/A")</p>
-            <p><strong>Fecha de Alta:</strong> @cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</p>
-            <p><strong>Fecha de Baja:</strong> @(cliente.FechaBaja.HasValue ? cliente.FechaBaja.Value.ToString("yyyy/MM/dd HH:mm:ss") : "Activo")</p>
+            <p><strong>Cuota máxima:</strong> @(cliente.CuotaMaxima.HasValue ? cliente.CuotaMaxima.Value.ToString("C") : "N/A")</p>
+            <p><strong>Fecha de alta:</strong> @cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</p>
+            <p><strong>Fecha de baja:</strong> @(cliente.FechaBaja.HasValue ? cliente.FechaBaja.Value.ToString("yyyy/MM/dd HH:mm:ss") : "Activo")</p>
         </div>
     </div>
 
-    <!-- Solo se muestra el botón de crear recibo si el cliente está activo -->
+    <!-- Crear recibo solo si el cliente es "Activo" -->
     @if (!cliente.FechaBaja.HasValue)
     {
-        <button class="btn btn-primary mb-3" @onclick="CrearRecibo">Crear Nuevo Recibo</button>
+        <button class="btn btn-primary btn-crear" @onclick="CrearRecibo">Crear recibo</button>
     }
 
-    <h4>Recibos del Cliente</h4>
+    <h4>Recibos del cliente</h4>
 
     @if (recibos == null)
     {
@@ -47,48 +138,71 @@ else
     }
     else
     {
-        <table class="table">
+        <!-- Tabla -->
+        <table class="table table-striped" style="margin: auto;">
             <thead>
                 <tr>
+                    <th></th>
                     <th>Recibo</th>
-                    <th>Fecha</th>
-                    <th>Importe</th>
-                    <th>Acciones</th>
+                    <th>Fecha de emisión</th>
+                    <th>Importe</th>               
                 </tr>
             </thead>
             <tbody>
-                @foreach (var recibo in recibos)
+                <!-- Recibos de la página actual -->
+                @foreach (var recibo in PaginaRecibos())
                 {
                     <tr>
+                        <td>
+                            <button class="btn" @onclick="() => EditarRecibo(recibo.Id)"><i class="bi bi-pencil" style="color: yellowgreen"></i></button>
+                            <button class="btn" @onclick="() => EliminarRecibo(recibo.Id)"><i class="bi bi-trash" style="color: red"></i></button>
+                        </td>
                         <td>@recibo.NumeroRecibo</td>
                         <td>@recibo.FechaEmision.ToString("yyyy/MM/dd")</td>
-                        <td>@recibo.Importe.ToString("C")</td>
-                        <td>
-                            <button class="btn btn-warning" @onclick="() => EditarRecibo(recibo.Id)">Editar</button>
-                            <button class="btn btn-danger" @onclick="() => EliminarRecibo(recibo.Id)">Eliminar</button>
-                        </td>
+                        <!-- Importe a la derecha -->
+                        <td style="text-align: right; padding-right: 30px;">@recibo.Importe.ToString("C")</td>                 
                     </tr>
                 }
             </tbody>
         </table>
+
+        <!--Paginación recibos (4 en 4) -->
+        <div class="d-flex justify-content-center mt-4">
+            <button class="btn btn-secondary" @onclick="() => CambiarPaginaRecibos(recibosPaginaActual - 1)" disabled="@(!PuedeIrAtrasRecibos())">Anterior</button>
+            <span class="mx-3 align-self-center">Página @recibosPaginaActual de @recibosTotalPaginas</span>
+            <button class="btn btn-secondary" @onclick="() => CambiarPaginaRecibos(recibosPaginaActual + 1)" disabled="@(!PuedeIrAdelanteRecibos())">Siguiente</button>
+        </div>
     }
 }
 
 @code {
+    // Parámetro del DNI para la URL
     [Parameter] public string dni { get; set; }
+
+    // Variable para almacenar el cliente y lista para sus recibos
     private Cliente cliente;
     private List<Recibo> recibos;
 
+    // Variables para la paginación 
+    private int recibosPaginaActual = 1;
+    private int recibosTamanoPagina = 4;
+
+    // Calculo el total de páginas basado en la cantidad de recibos
+    private int recibosTotalPaginas => recibos == null || recibos.Count == 0
+        ? 1
+        : (int)Math.Ceiling((double)recibos.Count / recibosTamanoPagina);
+
+    // Método que se ejecuta al inicializar la página y carga los datos del cliente y sus recibos
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Buscar cliente por DNI
+            // Busco el cliente por  su DNI
             cliente = await Http.GetFromJsonAsync<Cliente>($"https://localhost:7123/api/clientes/{dni}");
 
             if (cliente != null)
             {
-                // Guardar el cliente en sessionStorage
+                // Guardo el cliente en sessionStorage 
                 var clienteJson = JsonSerializer.Serialize(cliente);
                 await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "cliente", clienteJson);
 
@@ -100,69 +214,76 @@ else
                 }
                 else
                 {
-                    recibos = new List<Recibo>();  // No hay recibos, simplemente se muestra vacío
+                    // Si no hay recibos, asigno una lista vacía
+                    recibos = new List<Recibo>();
                 }
             }
             else
             {
+                // En caso de error
                 await Swal.FireAsync("Error", "Cliente no encontrado.", SweetAlertIcon.Error);
             }
         }
         catch (Exception ex)
         {
-            // Mostrar error con SweetAlert si ocurre una excepción al cargar datos
+            // Manejo de excepciones
             await Swal.FireAsync("Error", $"Error al cargar los datos del cliente: {ex.Message}", SweetAlertIcon.Error);
         }
     }
 
+    // Método para navegar a la lista de clientes
     private void Volver()
     {
         Navegador.NavigateTo("/clientes");
     }
 
+    // Método para navegar a Crear Recibo
     private async Task CrearRecibo()
     {
-        // Navega a la página de crear recibo usando el DNI del cliente
         Navegador.NavigateTo($"/crear-recibo/{cliente.DNI}");
     }
 
+    // Método para navegar a Editar Recibo
     private async Task EditarRecibo(int id)
     {
-        // Navega a la página de editar recibo usando el ID del recibo
         Navegador.NavigateTo($"/editar-recibo/{id}");
     }
 
+    // Método para eliminar un recibo
     private async Task EliminarRecibo(int id)
     {
         try
         {
-            // Mostrar confirmación para eliminar el recibo
+            // Confirmación con un SweetAlert para eliminar el recibo
             var result = await Swal.FireAsync(new SweetAlertOptions
-                {
-                    Title = "¿Desea eliminar el recibo?",
-                    Text = "Esta acción no se puede deshacer.",
-                    Icon = SweetAlertIcon.Warning,
-                    ShowCancelButton = true,
-                    ConfirmButtonText = "Eliminar",
-                    CancelButtonText = "No",
-                    ConfirmButtonColor = "#d33", // Color rojo para el botón de eliminar
-                    ReverseButtons = false,        // Invierte el orden de los botones (eliminación será primero)
-                    FocusCancel = true            // Establece el foco en el botón "No"
-                });
+            {
+                Title = "¿Desea eliminar el recibo?",
+                Text = "Esta acción no se puede deshacer.",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Eliminar",
+                CancelButtonText = "No",
+                ConfirmButtonColor = "#d33", 
+                ReverseButtons = false,
+                FocusCancel = true 
+            });
 
-            // Si se confirma la eliminación
             if (result.IsConfirmed)
             {
+                // Hago la petición DELETE a la API si el usuario confirma
                 var response = await Http.DeleteAsync($"https://localhost:7123/api/recibos/{id}");
+
+                // Si todo va bien
                 if (response.IsSuccessStatusCode)
                 {
-                    // Mostrar mensaje de éxito
                     await Swal.FireAsync("Éxito", "Recibo eliminado con éxito.", SweetAlertIcon.Success);
-                    // Eliminar el recibo de la lista local para actualizar la interfaz
+
+                    // Se elimina el recibo de la lista local para refrescar la interfaz del usuario
                     recibos.RemoveAll(r => r.Id == id);
                 }
                 else
                 {
+                    // En caso de error
                     var error = await response.Content.ReadAsStringAsync();
                     await Swal.FireAsync("Error", $"No se pudo eliminar el recibo: {error}", SweetAlertIcon.Error);
                 }
@@ -170,8 +291,36 @@ else
         }
         catch (Exception ex)
         {
-            // Mostrar error si ocurre un problema al eliminar
+            // Manejo de excepciones
             await Swal.FireAsync("Error", $"Ocurrió un error al intentar eliminar el recibo: {ex.Message}", SweetAlertIcon.Error);
         }
     }
+
+    // Método para obtener solo los recibos de la página actual (paginación de 4 en 4)
+    private List<Recibo> PaginaRecibos()
+    {
+        if (recibos == null)
+            return new List<Recibo>();
+
+        // Se omiten los recibos de las páginas anteriores y se toman solo los correspondientes a la página actual
+        return recibos
+            .Skip((recibosPaginaActual - 1) * recibosTamanoPagina)
+            .Take(recibosTamanoPagina)
+            .ToList();
+    }
+
+    // Método para cambiar de página en la paginación de recibos
+    private void CambiarPaginaRecibos(int nuevaPagina)
+    {
+        if (nuevaPagina >= 1 && nuevaPagina <= recibosTotalPaginas)
+        {
+            recibosPaginaActual = nuevaPagina;
+        }
+    }
+
+    // Método para saber si se puede ir a la página anterior en los recibos
+    private bool PuedeIrAtrasRecibos() => recibosPaginaActual > 1;
+
+    // Método para saber si se puede ir a la página siguiente en los recibos
+    private bool PuedeIrAdelanteRecibos() => recibosPaginaActual < recibosTotalPaginas;
 }
