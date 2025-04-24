@@ -1,0 +1,16 @@
+﻿@page "/Logout"
+@using BlazorAppVictor.Auth
+@inject ILoginService loginService
+@inject NavigationManager Navegador
+
+
+<p>Deslogueando...</p>
+
+@code {
+
+	protected async override Task OnInitializedAsync()
+	{
+		await loginService.Logout();
+		Navegador.NavigateTo("");
+	}
+}

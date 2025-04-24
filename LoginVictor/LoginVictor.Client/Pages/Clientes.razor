@@ -1,0 +1,599 @@
+﻿@page "/clientes"
+@using System.Globalization
+@using System.Net.Http.Json
+@using BlazorAppVictor.Entidades
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject HttpClient Http
+@inject SweetAlertService Swal
+@inject NavigationManager Navegador
+
+<style>
+	/* Box sizing a todo */
+	*, *::before, *::after {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+
+	/* Contenedor principal */
+	.container {
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		align-items: center;
+		padding: 20px;
+	}
+
+	/* Estilos para el título principal */
+	h3 {
+		text-align: center;
+		font-size: 40px;
+		font-weight: bold;
+		color: #333;
+		margin-top: 50px;
+		margin-bottom: 75px;
+	}
+
+	/* Botones */
+	button {
+		height: 40px;
+		padding: 0;
+		border: none;
+		background: none;
+	}
+
+	/* Formulario de búsqueda */
+	.busqueda-form {
+		margin-bottom: 20px;
+	}
+
+	/* Paginación */
+	.pagination {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-top: 20px;
+		gap: 15px;
+	}
+
+	/* Contenedor para la tabla */
+	.table-container {
+		max-height: none;
+		margin-bottom: 30px;
+	}
+
+	/* Inputs búsqueda */
+	.input-busqueda {
+		position: fixed;
+		width: 450px;
+		top: 246px;
+		height: 35px !important;
+		margin-left: 40px;
+	}
+
+	/* Posicionamiento fijo del contenedor de fechas */
+	.fechas-container {
+		position: fixed;
+		top: 246px;
+		left: 950px;
+		gap: 10px;
+	}
+
+		.fechas-container input {
+			width: 150px;
+			height: 35px;
+			font-size: 16px;
+			text-align: center;
+		}
+
+	/* Select */
+	.input-select {
+		position: fixed;
+		top: 246px;
+		left: 808px;
+		width: 100%;
+		max-width: 150px;
+		height: 35px;
+		text-align: center;
+		padding: 0;
+	}
+
+		.input-select option {
+			text-align: center;
+		}
+
+	/* Botón Crear */
+	.btn-crear {
+		position: fixed;
+		top: 246px;
+		right: 66px;
+		height: 35px;
+		font-size: 16px;
+		padding: 0 15px;
+		border-radius: 5px;
+		background-color: #007bff;
+		border: none;
+		color: white;
+		font-weight: bold;
+		transition: background-color 0.3s, box-shadow 0.3s;
+		display: inline-block;
+		margin-left: 15px;
+		vertical-align: middle;
+	}
+
+	/* Ajustes adicionales para el contenedor de fechas */
+	.fechas-container {
+		display: flex;
+		align-items: center;
+		margin-left: 30px;
+		gap: 10px;
+		justify-content: flex-start;
+	}
+
+	.d-flex.justify-content-center {
+		margin-top: 50px;
+	}
+
+	table {
+		margin-top: 150px;
+	}
+
+	.table-container td {
+		vertical-align: middle;
+	}
+
+	/* Iconos */
+	.table-container button i {
+		font-size: 20px;
+		margin-right: 5px;
+		margin-left: 10px;
+	}
+
+	.table-container button {
+		margin-right: 10px;
+	}
+</style>
+
+<h3>Clientes</h3>
+
+<!-- Formulario -->
+<div class="busqueda-form mb-3">
+	<div class="row align-items-center">
+		<!-- Input para búsqueda por DNI, nombre o apellidos -->
+		<div class="col-md-3">
+			<input placeholder="Buscar por DNI, nombre o apellidos" @bind="terminoBusqueda" class="form-control input-busqueda" />
+		</div>
+		<!-- Select para filtrar por estado (todos, activos o de baja) -->
+		<div class="col-md-2">
+			<select @bind="estadoSeleccionado" class="form-control input-select">
+				<option value="todos">Todos</option>
+				<option value="activos">Activos</option>
+				<option value="baja">De baja</option>
+			</select>
+		</div>
+		<!-- Inputs para filtrar por fecha de alta (inicio y fin) -->
+		<div class="col-md-4 fechas-container">
+			<input type="date" @bind="fechaInicio" class="form-control input-fecha" />
+			<input type="date" @bind="fechaFin" class="form-control input-fecha" />
+			<button class="btn" style="margin-top: -7.5px; margin-left: 20px;" @onclick="BuscarClientes">
+				<i class="bi bi-search fs-4"></i>
+			</button>
+		</div>
+
+		<!-- Botón Crear -->
+		<div class="col-md-3 d-flex justify-content-end">
+			<button class="btn btn-primary btn-crear" @onclick="CrearCliente">Crear cliente</button>
+		</div>
+	</div>
+</div>
+
+<!-- Tabla -->
+<div class="table-container">
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th class="text-start"></th>
+				<th class="text-start" @onclick='() => OrdenarPor("dni")'>DNI</th>
+				<th class="text-start">Nombre</th>
+				<th class="text-start">Primer apellido</th>
+				<th class="text-start">Segundo apellido</th>
+				<th class="text-start">Tipo</th>
+				<th class="text-start">Cuota máxima (€)</th>
+				<th class="text-start" @onclick='() => OrdenarPor("fecha")'>Fecha de alta</th>
+				<th class="text-start">Fecha de baja</th>
+			</tr>
+		</thead>
+		<tbody>
+			@* Si los clientes aún no se han cargado, se muestra un mensaje de carga *@
+			@if (clientes == null)
+			{
+				<tr>
+					<td colspan="9"><em>Cargando clientes...</em></td>
+				</tr>
+			}
+			@* Si no hay clientes que cumplan el filtro, muestro mensaje de aviso *@
+			else if (!clientes.Any())
+			{
+				<tr>
+					<td colspan="9" class="text-center">No se han encontrado clientes con los criterios seleccionados.</td>
+				</tr>
+			}
+			else
+			{
+				@foreach (var cliente in PaginaClientes())
+				{
+					<tr>
+						<td class="d-flex ml-n2">
+							<!-- Ver Cliente -->
+							<button @onclick="() => VerCliente(cliente.DNI)">
+								<i class="bi bi-eye" style="color: dodgerblue"></i>
+							</button>
+							<!-- Editar Cliente -->
+							<button @onclick="() => EditarCliente(cliente.DNI)">
+								<i class="bi bi-pencil" style="color: yellowgreen"></i>
+							</button>
+							<!-- Eliminar Cliente -->
+							<button @onclick="() => EliminarCliente(cliente.DNI)">
+								<i class="bi bi-person-x" style="color: red"></i>
+							</button>
+							<!-- Depende del estado se muestra baja o reactivar -->
+							@if (cliente.FechaBaja.HasValue)
+							{
+								<button @onclick="() => ReactivarCliente(cliente.DNI)">
+									<i class="bi bi-arrow-bar-up"></i>
+								</button>
+							}
+							else
+							{
+								<button @onclick="() => DarBaja(cliente.DNI)">
+									<i class="bi bi-arrow-bar-down" style="color: red"></i>
+								</button>
+							}
+						</td>
+						<!-- Muestro los datos -->
+						<td class="text-start">@cliente.DNI</td>
+						<td class="text-start">@cliente.Nombre</td>
+						<td class="text-start">@cliente.Apellido1</td>
+						<td class="text-start">@cliente.Apellido2</td>
+						<td class="text-start">@cliente.Tipo</td>
+						<td class="text-end" style="font-weight: bold; padding-right: 45px;">
+							@(cliente.CuotaMaxima.HasValue ? $"{cliente.CuotaMaxima.Value:C2}" : "N/A")
+						</td>
+						<td class="text-start">@cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</td>
+						<td class="text-start">
+							@if (cliente.FechaBaja.HasValue)
+							{
+								<!-- Si está dado de baja, se muestra en rojo -->
+								<span style="color: red;">@cliente.FechaBaja.Value.ToString("yyyy/MM/dd HH:mm:ss")</span>
+							}
+							else
+							{
+								<!-- Si está activo, se muestra en verde -->
+								<span style="color: green;">Activo</span>
+							}
+						</td>
+					</tr>
+				}
+			}
+		</tbody>
+	</table>
+</div>
+
+<!-- Paginación -->
+<div class="d-flex justify-content-center mt-4">
+	<button class="btn btn-secondary" @onclick="() => CambiarPagina(paginaActual - 1)" disabled="@(!PuedeIrAtras())">Anterior</button>
+	<span class="mx-3 align-self-center">Página @paginaActual de @totalPaginas</span>
+	<button class="btn btn-secondary" @onclick="() => CambiarPagina(paginaActual + 1)" disabled="@(!PuedeIrAdelante())">Siguiente</button>
+</div>
+
+@code {
+
+	// Listas para almacenar los clientes y los filtrados para la paginación
+	private List<Cliente> clientes;
+	private List<Cliente> clientesFiltrados;
+
+	// Variables para la búsqueda y los filtros
+	private string terminoBusqueda = "";
+	private DateTime? fechaInicio = null;
+	private DateTime? fechaFin = null;
+	private string estadoSeleccionado = "activos";
+	private string ordenPor = "dni";
+	private bool ordenAscendente = true;
+
+	// Variables para la paginación
+	private int paginaActual = 1;
+	private int totalPaginas = 1;
+	private int tamanoPagina = 5;
+
+	// Método que se ejecuta al inicializar la página y carga los clientes activos
+	protected override async Task OnInitializedAsync()
+	{
+		await BuscarClientes();
+	}
+
+	// Método para obtener los clientes desde el API con los filtros seleccionados
+	private async Task BuscarClientes()
+	{
+		try
+		{
+			var queryParams = new List<string>();
+
+			// Si se ingresó un término de búsqueda se añade como parámetro
+			if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+			{
+				queryParams.Add($"termino={Uri.EscapeDataString(terminoBusqueda)}");
+			}
+			// Si se especificó fecha de inicio, se añade al query
+			if (fechaInicio.HasValue)
+			{
+				queryParams.Add($"fechaInicio={fechaInicio.Value:yyyy-MM-dd}");
+			}
+			// Si se especificó fecha de fin, se añade al query
+			if (fechaFin.HasValue)
+			{
+				queryParams.Add($"fechaFin={fechaFin.Value:yyyy-MM-dd}");
+			}
+			// Se añaden los filtros de estado y orden
+			queryParams.Add($"estado={estadoSeleccionado}");
+			queryParams.Add($"orden={ordenPor.ToLower()}");
+
+			
+			// Se construye la query string final
+			var queryString = string.Join("&", queryParams);
+			var url = $"https://localhost:7123/api/clientes/buscar?{queryString}";
+
+			// Se hace la petición a la API
+			var response = await Http.GetAsync(url);
+
+			if (response.IsSuccessStatusCode)
+			{
+				// Se deserializa la lista de clientes
+				clientes = await response.Content.ReadFromJsonAsync<List<Cliente>>();
+				clientesFiltrados = clientes;
+
+				// Se calcula el total de páginas para la paginación
+				totalPaginas = (int)Math.Ceiling((double)clientes.Count / tamanoPagina);
+				paginaActual = 1;
+			}
+			else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+			{
+				// Si el API retorna NotFound, asignar lista vacía para que se muestre la fila con el mensaje
+				clientes = new List<Cliente>();
+				clientesFiltrados = clientes;
+				totalPaginas = 1;
+				paginaActual = 1;
+			}
+			else
+			{
+				// En caso de error
+				var error = await response.Content.ReadAsStringAsync();
+				await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+			}
+		}
+		catch (Exception ex)
+		{
+			// Manejo de excepciones
+			await Swal.FireAsync("Error", $"Error al buscar los clientes: {ex.Message}", SweetAlertIcon.Error);
+		}
+	}
+
+	// Método para obtener solo los clientes de la página actual
+	private List<Cliente> PaginaClientes()
+	{
+		// Calcula cuántos elementos hay que omitir con base en la página actual y el tamaño de página
+		// Por ejemplo: página 2 con 10 elementos por página -> se omiten los primeros 10
+		return clientesFiltrados
+			.Skip((paginaActual - 1) * tamanoPagina)  // Salta los elementos anteriores a la página actual
+			.Take(tamanoPagina)                       // Toma solo los elementos de la página actual
+			.ToList();                                // Convierte el resultado a una lista para mostrarlo en la tabla
+	}
+
+
+	// Método para cambiar de página cuando el usuario hace clic en "Siguiente" o en un número específico
+	private void CambiarPagina(int nuevaPagina)
+	{
+		// Valida que la nueva página esté dentro del rango válido (ni menor que 1 ni mayor que el total de páginas)
+		if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas)
+		{
+			// Actualiza la página actual para que se muestren los clientes correspondientes
+			paginaActual = nuevaPagina;
+		}
+	}
+
+
+	// Método que indica si se puede ir a la página anterior
+	private bool PuedeIrAtras() => paginaActual > 1;
+	// Solo se puede ir atrás si no estamos ya en la primera página
+
+	// Método que indica si se puede ir a la página siguiente
+	private bool PuedeIrAdelante() => paginaActual < totalPaginas;
+	// Solo se puede ir adelante si no estamos en la última página
+
+
+	// Método para ordenar la lista de clientes por la columna seleccionada (por ejemplo: nombre, fecha, etc.)
+	private void OrdenarPor(string columna)
+	{
+		// Si ya se está ordenando por esta columna, se invierte el orden (ascendente <-> descendente)
+		if (ordenPor == columna)
+		{
+			ordenAscendente = !ordenAscendente;
+		}
+		else
+		{
+			// Si se selecciona una nueva columna, se establece como la nueva clave de orden
+			ordenPor = columna;
+			ordenAscendente = true; // Siempre comienza en orden ascendente
+		}
+
+		// Se actualiza la lista de clientes con la nueva ordenación
+		// Se llama al método de búsqueda para aplicar el nuevo orden y refrescar la tabla
+		_ = BuscarClientes();
+	}
+
+
+	// Navega a Ver Cliente
+	private void VerCliente(string dni)
+	{
+		Navegador.NavigateTo($"/ver-cliente/{dni}");
+	}
+
+	// Navega a Editar Cliente
+	private void EditarCliente(string dni)
+	{
+		Navegador.NavigateTo($"/editar-cliente/{dni}");
+	}
+
+	// Método para eliminar un cliente
+	private async Task EliminarCliente(string dni)
+	{
+		// Para confirmar la eliminación con opciones de cancelar o confirmar
+		var confirmacion = await Swal.FireAsync(new SweetAlertOptions
+			{
+				Title = "¿Está seguro?",
+				Text = "Esta acción eliminará permanentemente el cliente.",
+				Icon = SweetAlertIcon.Warning,
+				ShowCancelButton = true,
+				ConfirmButtonText = "Eliminar",
+				CancelButtonText = "Cancelar",
+				ConfirmButtonColor = "#d33",
+				FocusCancel = true
+			});
+
+		// Si no se confirma
+		if (!confirmacion.IsConfirmed)
+			return;
+
+		// Se realiza la petición DELETE a la API
+		var respuesta = await Http.DeleteAsync($"https://localhost:7123/api/clientes/{dni}");
+
+		// Si todo va bien
+		if (respuesta.IsSuccessStatusCode)
+		{
+			await Swal.FireAsync("Eliminado", "Cliente eliminado con éxito.", SweetAlertIcon.Success);
+			await BuscarClientes();
+		}
+		else
+		{
+			var error = await respuesta.Content.ReadAsStringAsync();
+
+			// Si el mensaje de error indica que el cliente tiene recibos asociados, se ofrece la opción de dar de baja en su lugar.
+			if (error.Contains("recibos asociados"))
+			{
+				var bajaOpcion = await Swal.FireAsync(new SweetAlertOptions
+					{
+						Title = "Cliente con recibos asociados",
+						Text = "Este cliente tiene recibos asociados y no se puede eliminar. ¿Desea darlo de baja?",
+						Icon = SweetAlertIcon.Info,
+						ShowCancelButton = true,
+						ConfirmButtonText = "Dar de baja",
+						CancelButtonText = "Cancelar",
+						FocusCancel = true,
+						ConfirmButtonColor = "#007bff"
+					});
+
+				// Si se confirma la opción para dar de baja, se llama al método DarBaja
+				if (bajaOpcion.IsConfirmed)
+				{
+					await DarBaja(dni);
+				}
+			}
+			else
+			{
+				// En caso de error
+				await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+			}
+		}
+	}
+
+	// Método para dar de baja un cliente, solicitando la fecha y hora con formato "yyyy/MM/dd HH:mm:ss"
+	private async Task DarBaja(string dni)
+	{
+		try
+		{
+			// Muestro un diálogo solicitando la fecha y hora de baja
+			var result = await Swal.FireAsync(new SweetAlertOptions
+				{
+					Title = "Seleccionar fecha de baja",
+					Text = "Por favor, ingresa la fecha y hora de baja (Formato: yyyy/MM/dd HH:mm:ss):",
+					Input = SweetAlertInputType.Text,
+					ShowCancelButton = true,
+					ConfirmButtonText = "Confirmar",
+					CancelButtonText = "Cancelar",
+					Icon = SweetAlertIcon.Question
+				});
+
+			// Si el usuario confirma e ingresa el valor, se valida el formato
+			if (result.IsConfirmed && !string.IsNullOrEmpty(result.Value))
+			{
+				if (!DateTime.TryParseExact(result.Value, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fechaBaja))
+				{
+					await Swal.FireAsync("Error", "La fecha y hora ingresadas no son válidas (formato yyyy/MM/dd HH:mm:ss).", SweetAlertIcon.Error);
+					return;
+				}
+
+				// Se fuerza a que la fecha esté marcada como UTC si es Unspecified
+				if (fechaBaja.Kind == DateTimeKind.Unspecified)
+				{
+					fechaBaja = DateTime.SpecifyKind(fechaBaja, DateTimeKind.Utc);
+				}
+
+				// Se construye la URL de la petición con el formato especificado
+				var url = $"https://localhost:7123/api/clientes/baja/{dni}?fechaBaja={Uri.EscapeDataString(fechaBaja.ToString("yyyy/MM/dd HH:mm:ss"))}";
+				var respuesta = await Http.PutAsJsonAsync<object>(url, null);
+
+				// Si todo va bien
+				if (respuesta.IsSuccessStatusCode)
+				{
+					await Swal.FireAsync("Éxito", "Cliente dado de baja con éxito.", SweetAlertIcon.Success);
+					await BuscarClientes();
+				}
+				else
+				{
+					// En caso de error
+					var error = await respuesta.Content.ReadAsStringAsync();
+					await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			// Manejo de excepciones
+			await Swal.FireAsync("Error", $"Error al dar de baja al cliente: {ex.Message}", SweetAlertIcon.Error);
+		}
+	}
+
+	// Método para reactivar un cliente que ya se encuentra dado de baja
+	private async Task ReactivarCliente(string dni)
+	{
+		try
+		{
+			// Hago la petición PUT a la API
+			var respuesta = await Http.PutAsJsonAsync<object>($"https://localhost:7123/api/clientes/reactivar/{dni}", null);
+
+			// Si todo va bien
+			if (respuesta.IsSuccessStatusCode)
+			{
+				await Swal.FireAsync("Éxito", "Cliente reactivado con éxito.", SweetAlertIcon.Success);
+				await BuscarClientes();
+			}
+			else
+			{
+				// En caso de error
+				var error = await respuesta.Content.ReadAsStringAsync();
+				await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+			}
+		}
+		catch (Exception ex)
+		{
+			// Manejo de excepciones
+			await Swal.FireAsync("Error", $"Error al reactivar el cliente: {ex.Message}", SweetAlertIcon.Error);
+		}
+	}
+
+	// Método para navegar a la página de Crear Cliente
+	private void CrearCliente()
+	{
+		Navegador.NavigateTo("/crear-cliente");
+	}
+}

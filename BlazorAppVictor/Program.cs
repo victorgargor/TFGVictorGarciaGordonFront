@@ -1,21 +1,27 @@
+using BlazorAppVictor;
+using BlazorAppVictor.Auth;
 using CurrieTechnologies.Razor.SweetAlert2;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
-namespace BlazorAppVictor;
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
+builder.Services.AddSingleton(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+ConfigureServices(builder.Services);
 
-public class Program
+await builder.Build().RunAsync();
+
+void ConfigureServices(IServiceCollection services)
 {
-    public static async Task Main(string[] args)
-    {
-        var builder = WebAssemblyHostBuilder.CreateDefault(args);
-        builder.RootComponents.Add<App>("#app");
-        builder.RootComponents.Add<HeadOutlet>("head::after");
-        builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-        
-        // Para las alertas
-        builder.Services.AddSweetAlert2();
+    services.AddSweetAlert2();
+    services.AddAuthorizationCore();
 
-        await builder.Build().RunAsync();
-    }
+    services.AddScoped<ProveedorAutenticacionJWT>();
+    services.AddScoped<AuthenticationStateProvider, ProveedorAutenticacionJWT>(proveedor =>
+        proveedor.GetRequiredService<ProveedorAutenticacionJWT>());
+
+    services.AddScoped<ILoginService, ProveedorAutenticacionJWT>(proveedor =>
+        proveedor.GetRequiredService<ProveedorAutenticacionJWT>());
 }

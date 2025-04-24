@@ -1,7 +1,7 @@
 ﻿@page "/clientes"
-@using BlazorAppVictor.Models
-@using System.Net.Http.Json
 @using System.Globalization
+@using System.Net.Http.Json
+@using BlazorAppVictor.Entidades
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject NavigationManager Navegador
@@ -256,7 +256,7 @@
 						<td class="text-start">@cliente.Apellido1</td>
 						<td class="text-start">@cliente.Apellido2</td>
 						<td class="text-start">@cliente.Tipo</td>
-						<td class="text-end" style="padding-right: 45px;">
+						<td class="text-end" style="font-weight: bold; padding-right: 45px;">
 							@(cliente.CuotaMaxima.HasValue ? $"{cliente.CuotaMaxima.Value:C2}" : "N/A")
 						</td>
 						<td class="text-start">@cliente.FechaAlta.ToString("yyyy/MM/dd HH:mm:ss")</td>
