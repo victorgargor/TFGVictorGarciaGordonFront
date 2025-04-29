@@ -1,0 +1,22 @@
+﻿@typeparam TItem
+
+@code {
+    [Parameter]
+    public IEnumerable<TItem>? Listado { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}
+
+@if (Listado is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else if (!Listado.Any())
+{
+    <p><em>No hay registros para mostrar.</em></p>
+}
+else
+{
+    @ChildContent
+}

@@ -1,0 +1,107 @@
+﻿@page "/usuarios/editar/{UsuarioId}"
+@using BlazorAppVictor.DTOs
+@using System.Text
+@using System.Text.Json
+@inject HttpClient Http
+@inject SweetAlertService Swal
+
+<h3>EditarUsuario</h3>
+
+@if (roles is null)
+{
+	<p>Cargando...</p>
+}
+else
+{
+	<div class="form-inline">
+		<select class="form-select mb-2" @bind="rolSeleccionado">
+			<option value="0">--Seleccione un rol--</option>
+			@foreach (var rol in roles)
+			{
+				<option value="@rol.Nombre">@rol.Nombre</option>
+			}
+		</select>
+
+		<button class="btn btn-info mb-2" @onclick="AsignarRol">Asignar rol</button>
+		<button class="btn btn-danger mb-2" @onclick="RemoverRol">Remover rol</button>
+	</div>
+
+}
+
+
+@code {
+	[Parameter]
+	public string UsuarioId { get; set; } = null!;
+	private List<RolDTO>? roles;
+	private string rolSeleccionado = "0";
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			var response = await Http.GetAsync("https://localhost:7123/api/usuarios/roles");
+
+			if (!response.IsSuccessStatusCode)
+			{
+				var mensajeError = await response.Content.ReadAsStringAsync();
+				await Swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+			}
+			else
+			{
+				var json = await response.Content.ReadAsStringAsync();
+				roles = JsonSerializer.Deserialize<List<RolDTO>>(json, new JsonSerializerOptions
+					{
+						PropertyNameCaseInsensitive = true
+					});
+			}
+		}
+		catch (Exception ex)
+		{
+			await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
+		}
+	}
+
+
+	private async Task AsignarRol()
+	{
+		await EditarRol("https://localhost:7123/api/usuarios/asignarRol");
+	}
+
+	private async Task RemoverRol()
+	{
+		await EditarRol("https://localhost:7123/api/usuarios/removerRol");
+	}
+
+	private async Task EditarRol(string url)
+	{
+		if (rolSeleccionado == "0")
+		{
+			await Swal.FireAsync("Error", "Debe seleccionar un rol", SweetAlertIcon.Error);
+			return;
+		}
+
+		var rolDTO = new EditarRolDTO { Rol = rolSeleccionado, UsuarioId = UsuarioId };
+
+		try
+		{
+			var json = JsonSerializer.Serialize(rolDTO);
+			var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+			var response = await Http.PostAsync(url, content);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				var mensajeError = await response.Content.ReadAsStringAsync();
+				await Swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+			}
+			else
+			{
+				await Swal.FireAsync("Exitoso", "Operación realizada con éxito", SweetAlertIcon.Success);
+			}
+		}
+		catch (Exception ex)
+		{
+			await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
+		}
+	}
+}

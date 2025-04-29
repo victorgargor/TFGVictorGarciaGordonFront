@@ -12,15 +12,6 @@
 <EditForm Model="userInfo" OnValidSubmit="LoguearUsuario">
 	<DataAnnotationsValidator />
 
-	
-    <div class="mb-3">
-        <label>Nombre:</label>
-        <div>
-            <InputText class="form-control" @bind-Value="userInfo.Nombre" />
-            <ValidationMessage For="@(() => userInfo.Nombre)" />
-        </div>
-    </div>
-
 	<div class="mb-3">
 		<label>Email:</label>
 		<div>
@@ -32,7 +23,7 @@
 	<div class="mb-3">
 		<label>Password:</label>
 		<div>
-			<InputText class="form-control" @bind-Value="userInfo.Password" />
+			<InputText type="password" class="form-control" @bind-Value="userInfo.Password" />
 			<ValidationMessage For="@(() => userInfo.Password)" />
 		</div>
 	</div>

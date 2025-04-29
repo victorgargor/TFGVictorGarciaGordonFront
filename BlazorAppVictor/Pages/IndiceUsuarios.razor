@@ -1,0 +1,112 @@
+﻿@page "/usuarios"
+@using BlazorAppVictor.DTOs
+@using BlazorAppVictor.Helpers
+@inject HttpClient Http
+@inject SweetAlertService Swal
+@inject IJSRuntime js
+
+<h3>Índice Usuarios</h3>
+
+<!-- Paginación -->
+<div class="pagination-container">
+    <!-- Botón Anterior -->
+    <button @onclick="() => CambiarPagina(paginaActual - 1)" 
+            class="btn btn-secondary"
+            disabled="@((paginaActual == 1))">
+        Anterior
+    </button>
+
+    <!-- Números de Páginas -->
+    <span class="mx-2">@paginaActual de @paginasTotales</span>
+
+    <!-- Botón Siguiente -->
+    <button @onclick="() => CambiarPagina(paginaActual + 1)" 
+            class="btn btn-secondary"
+            disabled="@((paginaActual == paginasTotales))">
+        Siguiente
+    </button>
+</div>
+
+<!-- Listado de Usuarios -->
+<ListadoGenerico Listado="Usuarios">
+    <HayRegistrosCompleto>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Usuario</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var usuario in Usuarios!)
+                {
+                    <tr>
+                        <td>
+                            <a href="/usuarios/editar/@usuario.Id" class="btn btn-success">Editar</a>
+                        </td>
+                        <td>
+                            @usuario.Email
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </HayRegistrosCompleto>
+</ListadoGenerico>
+
+@code {
+    List<UsuarioDTO>? Usuarios = new List<UsuarioDTO>();
+    private int paginaActual = 1;
+    private int paginasTotales = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Cargar(paginaActual);  // Cargar la primera página
+    }
+
+    private async Task CambiarPagina(int pagina)
+    {
+        if (pagina >= 1 && pagina <= paginasTotales)  // Verifica que la página esté dentro de los límites
+        {
+            paginaActual = pagina;
+            await Cargar(paginaActual);  // Cargar los datos para la página seleccionada
+        }
+    }
+
+    private async Task Cargar(int pagina)
+    {
+        var tokenObj = await js.ObtenerDeLocalStorage("TOKENKEY");
+        var token = tokenObj?.ToString();
+
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        var paginacion = new PaginacionDTO
+        {
+            Pagina = pagina,
+            CantidadRegistros = 5
+        };
+
+        var url = $"https://localhost:7123/api/usuarios?pagina={paginacion.Pagina}&cantidadRegistros={paginacion.CantidadRegistros}";
+
+        var respuesta = await Http.GetAsync(url);
+
+        if (respuesta.IsSuccessStatusCode)
+        {
+            if (respuesta.Headers.Contains("totalPaginas"))
+            {
+                paginasTotales = int.Parse(respuesta.Headers.GetValues("totalPaginas").FirstOrDefault()!);
+            }
+
+            Usuarios = await respuesta.Content.ReadFromJsonAsync<List<UsuarioDTO>>() ?? new List<UsuarioDTO>();  // Evita null
+        }
+        else
+        {
+            var error = await respuesta.Content.ReadAsStringAsync();
+            await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+        }
+    }
+}
