@@ -1,179 +1,114 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>Home</PageTitle>
 
 <style>
-    /* Estilos globales */
-    body {
-        font-family: 'Poppins', sans-serif;
-        background-color: #f6f8fa;
-        color: #24292f;
-        margin: 0;
-        padding: 20px;
-        overflow: hidden;
-    }
+	* {
+		box-sizing: border-box;
+	}
 
-    /* Título */
-    h1 {
-        color: black;
-        text-align: center;
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin-bottom: 20px;
-    }
+	body {
+		margin: 0;
+		padding: 0;
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		background-color: #eef2f5;
+		color: #333;
+	}
 
-    /* Estilo p */
-    .highlighted-text {
-        font-weight: 300;
-        font-size: 1.1rem;
-        color: #555;
-        text-align: center;
-        margin-bottom: 20px;
-    }
+	.container {
+		max-width: 480px;
+		margin: 60px auto;
+		padding: 30px;
+		background-color: #ffffff;
+		border-radius: 12px;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+		text-align: center;
+	}
 
-    /* Contenedor principal */
-    .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 0 10px rgba(27, 31, 35, 0.1);
-    }
+	h1 {
+		margin-bottom: 10px;
+		font-size: 2.25rem;
+		font-weight: 700;
+		color: #222;
+	}
 
-    /* Botones */
-    .btn-operation {
-        width: 50%;
-        background-color: #0969da;
-        color: white;
-        font-size: 1.1rem;
-        font-weight: bold;
-        padding: 12px 20px;
-        border: solid 1px black;
-        border-radius: 6px;
-        margin: 5px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
+	.btn-operation {
+		display: block;
+		width: 100%;
+		padding: 0.75rem;
+		margin: 10px 0;
+		font-size: 1rem;
+		font-weight: 500;
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		background: linear-gradient(135deg, #5b9bd5 0%, #4a7bb7 100%);
+		transition: background 0.3s, transform 0.1s, box-shadow 0.2s ease;
+		box-shadow: 0 4px 10px rgba(91, 155, 213, 0.2);
+	}
 
-        /* Efecto hover */
-        .btn-operation:hover {
-            background-color: #0550ae;
-            color: white;
-            transform: scale(1.1); 
-        }
+		.btn-operation:hover {
+			background: linear-gradient(135deg, #4a7bb7 0%, #5b9bd5 100%);
+			box-shadow: 0 6px 14px rgba(91, 155, 213, 0.3);
+		}
 
-    /* Para que los botones estén uno debajo del otro */
-    .row {
-        margin-top: 5px;
-    }
+		.btn-operation:active {
+			transform: scale(0.98);
+		}
 
-    .mb-3 {
-        margin-bottom: 5px; 
-    }
+	.not-authorized {
+		margin-top: 16px;
+		font-style: italic;
+		color: #d9534f;
+	}
 </style>
 
-<h1>¡Bienvenido a mi API!</h1>
-<p class="highlighted-text">¿Qué operación desea realizar?</p>
-
 <div class="container">
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrACalculadora">Calculadora</button>
-        </div>
-    </div>
+	<h1>¡Bienvenido!</h1>
 
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrACalculadoraDecimal">Calculadora decimal</button>
-        </div>
-    </div>
+	<AuthorizeView>
+		<Authorized Context="auth">
+			<div class="not-authorized">
+				Seleccione la página a la que desea navegar
+			</div>
 
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrATexto">Operaciones con texto</button>
-        </div>
-    </div>
+			@if (auth.User.IsInRole("usuario")
+					|| auth.User.IsInRole("admin")
+					|| auth.User.IsInRole("superadmin"))
+			{
+				<button class="btn-operation mt-3" @onclick="IrACRUD">
+					Clientes y recibos
+				</button>
+			}
 
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrAFecha">Fechas</button>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrACRUD">Clientes y recibos</button>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrAItemSeparator">ItemSeparator</button>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrAFormas">Formas</button>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12 text-center">
-            <button class="btn btn-operation mb-3" @onclick="IrAKaprekar">Kaprekar</button>
-        </div>
-    </div>
+			@if (auth.User.IsInRole("superadmin"))
+			{
+				<button class="btn-operation" @onclick="IrAUsuarios">
+					Usuarios
+				</button>
+			}
+		</Authorized>
+		<NotAuthorized>
+			<div class="not-authorized">
+				Regístrese o inicie sesión con una cuenta existente para poder acceder al contenido de esta página
+			</div>
+		</NotAuthorized>
+	</AuthorizeView>
 </div>
 
 @code {
-    // Función para navegar a la página de la calculadora
-    private void IrACalculadora()
-    {
-        NavigationManager.NavigateTo("/calculadora");
-    }
+	[Inject] private NavigationManager NavigationManager { get; set; } = default!;
 
-    // Función para navegar a la página de la calculadora
-    private void IrACalculadoraDecimal()
-    {
-        NavigationManager.NavigateTo("/calculadoraDecimal");
-    }
+	private void IrACRUD()
+	{
+		NavigationManager.NavigateTo("/clientes");
+	}
 
-    // Función para navegar a la página de Operaciones con texto
-    private void IrATexto()
-    {
-        NavigationManager.NavigateTo("/texto");
-    }
-
-    // Función para navegar a la página de Operaciones con fechas
-    private void IrAFecha()
-    {
-        NavigationManager.NavigateTo("/fecha");
-    }
-
-    // Función para navegar a la página del CRUD de Clientes y recibos
-    private void IrACRUD()
-    {
-        NavigationManager.NavigateTo("/clientes");
-    }
-
-    // Función para navegar a la página de ItemSeparator
-    private void IrAItemSeparator()
-    {
-        NavigationManager.NavigateTo("/itemseparator");
-    }
-
-    // Función para navegar a la página de Operación de Kaprekar
-    private void IrAKaprekar()
-    {
-        NavigationManager.NavigateTo("/kaprekar");
-    }
-
-    // Función para navegar a la página del Generador de Formas
-    private void IrAFormas()
-    {
-        NavigationManager.NavigateTo("/formas");
-    }
-
-    [Inject] private NavigationManager NavigationManager { get; set; }
+	private void IrAUsuarios()
+	{
+		NavigationManager.NavigateTo("/usuarios");
+	}
 }

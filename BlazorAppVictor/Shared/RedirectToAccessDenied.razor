@@ -1,0 +1,8 @@
+﻿@inject NavigationManager Navegador
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navegador.NavigateTo("/access-denied", true);
+    }
+}

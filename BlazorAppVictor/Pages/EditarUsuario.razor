@@ -1,19 +1,127 @@
 ﻿@page "/usuarios/editar/{UsuarioId}"
+@attribute [Authorize(Roles = "superadmin")]
 @using BlazorAppVictor.DTOs
 @using System.Text
 @using System.Text.Json
 @inject HttpClient Http
 @inject SweetAlertService Swal
 
-<h3>EditarUsuario</h3>
+<style>
+	h3 {
+		text-align: center;
+		font-size: 40px;
+		font-weight: bold;
+		color: #333;
+		margin-top: 50px;
+		margin-bottom: 75px;
+	}
 
-@if (roles is null)
+	.table {
+		width: 100%;
+		margin-top: 20px;
+		border-collapse: collapse;
+		background: #fff;
+		border-radius: 12px;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+	}
+
+	.table th,
+	.table td {
+		border-bottom: 1px solid #e5e5e5;
+	}
+
+	.table th {
+		background-color: #f4f6f9;
+		padding: 1rem;
+		text-align: left;
+	}
+
+	.table td {
+		vertical-align: middle;
+		font-size: 1rem;
+		line-height: 1.5;
+		padding: 1rem;
+	}
+
+	.table td.icon-cell {
+		padding: 0.5rem;
+		text-align: center;
+		vertical-align: middle;
+		width: 60px;
+	}
+
+	.table td:not(.icon-cell) {
+		display: flex;
+		align-items: center;
+		height: 100%;
+	}
+
+	.table-responsive-wrapper {
+		overflow-x: auto;
+	}
+
+	.btn {
+		padding: 0.5rem 1rem;
+		border-radius: 6px;
+		transition: background 0.3s, transform 0.1s;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.btn-info {
+		background-color: #17a2b8;
+		color: white;
+	}
+
+	.btn-danger {
+		background-color: #dc3545;
+		color: white;
+	}
+
+	.btn-info:hover {
+		background-color: #138496;
+	}
+
+	.btn-danger:hover {
+		background-color: #c82333;
+	}
+
+	.form-inline {
+		margin-bottom: 20px;
+		display: flex;
+		gap: 10px;
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	select.form-select {
+		padding: 0.5rem 1rem;
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		font-size: 1rem;
+	}
+
+	.selector-container {
+		margin-bottom: 40px;
+	}
+
+	.bi {
+		font-size: 1.4rem;
+	}
+</style>
+
+<h3>Editar usuario</h3>
+
+@if (roles is null || rolesAsignados is null)
 {
 	<p>Cargando...</p>
 }
 else
 {
-	<div class="form-inline">
+	<div class="form-inline selector-container">
+		<!-- Selección de Rol -->
 		<select class="form-select mb-2" @bind="rolSeleccionado">
 			<option value="0">--Seleccione un rol--</option>
 			@foreach (var rol in roles)
@@ -22,37 +130,82 @@ else
 			}
 		</select>
 
-		<button class="btn btn-info mb-2" @onclick="AsignarRol">Asignar rol</button>
-		<button class="btn btn-danger mb-2" @onclick="RemoverRol">Remover rol</button>
+		<!-- Botón para Asignar Rol -->
+		<button class="btn btn-info mb-2" title="Asignar rol" @onclick="AsignarRol">
+			<i class="bi bi-person-plus-fill"></i>
+		</button>
 	</div>
 
+	<div class="table-responsive-wrapper">
+		<table class="table">
+			<thead>
+				<tr>
+					<th style="width: 60px;"></th>
+					<th>Rol</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var rol in rolesAsignados)
+				{
+					<tr>
+						<td class="icon-cell">
+							<button class="btn" title="Remover rol" @onclick="() => RemoverRol(rol)">
+								<i class="bi bi-person-dash-fill text-danger"></i>
+							</button>
+						</td>
+						<td>@rol</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
 }
-
 
 @code {
 	[Parameter]
 	public string UsuarioId { get; set; } = null!;
+
 	private List<RolDTO>? roles;
+	private List<string>? rolesAsignados;
 	private string rolSeleccionado = "0";
 
 	protected override async Task OnInitializedAsync()
 	{
 		try
 		{
-			var response = await Http.GetAsync("https://localhost:7123/api/usuarios/roles");
-
-			if (!response.IsSuccessStatusCode)
+			var responseRoles = await Http.GetAsync("https://localhost:7123/api/usuarios/roles");
+			if (!responseRoles.IsSuccessStatusCode)
 			{
-				var mensajeError = await response.Content.ReadAsStringAsync();
+				var mensajeError = await responseRoles.Content.ReadAsStringAsync();
 				await Swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
 			}
 			else
 			{
+				var jsonRoles = await responseRoles.Content.ReadAsStringAsync();
+				roles = JsonSerializer.Deserialize<List<RolDTO>>(jsonRoles, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+			}
+
+			await CargarRolesAsignados();
+		}
+		catch (Exception ex)
+		{
+			await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
+		}
+	}
+
+	private async Task CargarRolesAsignados()
+	{
+		try
+		{
+			var response = await Http.GetAsync($"https://localhost:7123/api/usuarios/obtenerRoles/{UsuarioId}");
+			if (response.IsSuccessStatusCode)
+			{
 				var json = await response.Content.ReadAsStringAsync();
-				roles = JsonSerializer.Deserialize<List<RolDTO>>(json, new JsonSerializerOptions
-					{
-						PropertyNameCaseInsensitive = true
-					});
+				rolesAsignados = JsonSerializer.Deserialize<List<string>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+			}
+			else
+			{
+				await Swal.FireAsync("Error", "No se pudieron cargar los roles asignados", SweetAlertIcon.Error);
 			}
 		}
 		catch (Exception ex)
@@ -61,30 +214,30 @@ else
 		}
 	}
 
-
 	private async Task AsignarRol()
 	{
 		await EditarRol("https://localhost:7123/api/usuarios/asignarRol");
 	}
 
-	private async Task RemoverRol()
+	private async Task RemoverRol(string rol)
 	{
-		await EditarRol("https://localhost:7123/api/usuarios/removerRol");
+		var rolDTO = new EditarRolDTO { Rol = rol, UsuarioId = UsuarioId };
+		await EditarRol("https://localhost:7123/api/usuarios/removerRol", rolDTO);
 	}
 
-	private async Task EditarRol(string url)
+	private async Task EditarRol(string url, EditarRolDTO? rolDTOParam = null)
 	{
-		if (rolSeleccionado == "0")
+		var dto = rolDTOParam ?? new EditarRolDTO { Rol = rolSeleccionado, UsuarioId = UsuarioId };
+
+		if (string.IsNullOrWhiteSpace(dto.Rol) || dto.Rol == "0")
 		{
 			await Swal.FireAsync("Error", "Debe seleccionar un rol", SweetAlertIcon.Error);
 			return;
 		}
 
-		var rolDTO = new EditarRolDTO { Rol = rolSeleccionado, UsuarioId = UsuarioId };
-
 		try
 		{
-			var json = JsonSerializer.Serialize(rolDTO);
+			var json = JsonSerializer.Serialize(dto);
 			var content = new StringContent(json, Encoding.UTF8, "application/json");
 
 			var response = await Http.PostAsync(url, content);
@@ -97,6 +250,7 @@ else
 			else
 			{
 				await Swal.FireAsync("Exitoso", "Operación realizada con éxito", SweetAlertIcon.Success);
+				await CargarRolesAsignados();
 			}
 		}
 		catch (Exception ex)

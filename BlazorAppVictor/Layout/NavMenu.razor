@@ -1,77 +1,82 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">BlazorAppVictor</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
+﻿<style>
+	.nav-link {
+		display: flex;
+		align-items: center; /* centra verticalmente icono y texto */
+		gap: 0.1rem; /* espacio horizontal entre caja y texto */
+		padding: 0.5rem 1rem; /* espaciado interno */
+	}
+
+	.icon-box {
+		flex: 0 0 auto; /* tamaño fijo, no crece ni encoge */
+		width: 2.5rem; /* ancho fijo */
+		height: 2.5rem; /* alto fijo */
+		display: flex;
+		align-items: center; /* centra el icono vertical */
+		justify-content: center; /* centra el icono horizontal */
+		border-radius: 4px; /* esquinas redondeadas */
+	}
+
+	.nav-link .bi {
+		font-size: 1.25rem; /* tamaño de icono */
+		line-height: 1; /* evita desalineaciones */
+	}
+
+	.link-text {
+		font-size: 1rem;
+		color: inherit; /* hereda color del nav-link */
+	}
+</style>
+
+<div class="top-row ps-3 navbar navbar-dark">
+	<div class="container-fluid">
+		<a class="navbar-brand" href="">BlazorAppVictor</a>
+		<button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+	</div>
 </div>
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/calculadora">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Calculadora
-            </NavLink>
-        </div>
+	<nav class="flex-column">
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/calculadoraDecimal">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Calculadora decimal
-            </NavLink>
-        </div>
+		<!-- Clientes y recibos: usuario, admin y superadmin -->
+		<AuthorizeView Roles="usuario,admin,superadmin">
+			<Authorized>
+				<div class="nav-item px-3">
+					<NavLink class="nav-link" href="/clientes">
+						<span class="icon-box">
+							<span class="bi bi-people" aria-hidden="true"></span>
+						</span>
+						<span class="link-text">Clientes y recibos</span>
+					</NavLink>
+				</div>
+			</Authorized>
+		</AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/texto">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Operaciones con texto
-            </NavLink>
-        </div>
+		<!-- Usuarios: sólo superadmin -->
+		<AuthorizeView Roles="superadmin">
+			<Authorized>
+				<div class="nav-item px-3">
+					<NavLink class="nav-link" href="/usuarios">
+						<span class="icon-box">
+							<span class="bi bi-person-badge" aria-hidden="true"></span>
+						</span>
+						<span class="link-text">Usuarios</span>
+					</NavLink>
+				</div>
+			</Authorized>
+		</AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/fecha">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Fechas
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/clientes">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Clientes y recibos
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/itemseparator">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> ItemSeparator
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/formas">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Formas
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/kaprekar">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Kaprekar
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="usuarios">
-                <span class="bi bi-arrow-nav-menu" aria-hidden="true"></span> Usuarios
-            </NavLink>
-        </div>
-    </nav>
+	</nav>
 </div>
 
 @code {
-    private bool collapseNavMenu = true;
+	private bool collapseNavMenu = true;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+	private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
+	private void ToggleNavMenu()
+	{
+		collapseNavMenu = !collapseNavMenu;
+	}
 }

@@ -1,4 +1,4 @@
-﻿@page "/Registro"
+﻿@page "/registro"
 @using BlazorAppVictor.Auth
 @using BlazorAppVictor.DTOs
 @inject HttpClient Http
@@ -6,52 +6,155 @@
 @inject ILoginService loginService
 @inject NavigationManager Navegador
 
+<style>
 
-<h3>Registro</h3>
+    body, input, button {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-<EditForm Model="userInfo" OnValidSubmit="CrearUsuario">
-	<DataAnnotationsValidator />
+    .registro-card {
+        max-width: 380px;
+        margin: 3rem auto;
+        padding: 2rem 1.5rem;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
 
-	<div class="mb-3">
-		<label>Email:</label>
-		<div>
-			<InputText class="form-control" @bind-Value="userInfo.Email" />
-			<ValidationMessage For="@(() => userInfo.Email)" />
-		</div>
-	</div>
+        /* Título */
+        .registro-card h3 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
 
-	<div class="mb-3">
-		<label>Password:</label>
-		<div>
-			<InputText type="password" class="form-control" @bind-Value="userInfo.Password" />
-			<ValidationMessage For="@(() => userInfo.Password)" />
-		</div>
-	</div>
+    .input-group {
+        position: relative;
+        margin-bottom: 1.5rem; 
+    }
 
-	<button type="submit" class="btn btn-primary">Registrar</button>
-</EditForm>
+        .input-group i {
+            position: absolute;
+            top: 50%;
+            left: 0.75rem;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .input-group .form-control {
+            padding-left: 2.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            height: 2.75rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+            .input-group .form-control:focus {
+                border-color: #5b9bd5;
+                box-shadow: 0 0 0 0.2rem rgba(91, 155, 213, 0.25);
+                outline: none;
+            }
+
+    .validation-message {
+        display: block; 
+        color: #d9534f;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        margin-bottom: 1rem; 
+    }
+
+    .btn-registro {
+        background: linear-gradient(135deg, #5b9bd5 0%, #4a7bb7 100%);
+        border: none;
+        border-radius: 6px;
+        padding: 0.65rem;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #fff;
+        width: 100%;
+        transition: background 0.3s, transform 0.1s;
+    }
+
+        .btn-registro:hover {
+            background: linear-gradient(135deg, #4a7bb7 0%, #5b9bd5 100%);
+        }
+
+        .btn-registro:active {
+            transform: scale(0.98);
+        }
+</style>
+
+<div class="registro-card">
+    <h3>Crear cuenta</h3>
+
+    <EditForm Model="userInfo" OnValidSubmit="CrearUsuario">
+        <DataAnnotationsValidator />
+
+        <!-- Email -->
+        <div class="input-group">
+            <i class="fa-solid fa-envelope"></i>
+            <InputText id="email"
+                       type="email"
+                       class="form-control"
+                       placeholder="Correo electrónico"
+                       @bind-Value="userInfo.Email" />
+        </div>
+        <ValidationMessage For="@(() => userInfo.Email)"
+                           class="validation-message" />
+
+        <!-- Contraseña -->
+        <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <InputText id="password"
+                       type="password"
+                       class="form-control"
+                       placeholder="Contraseña"
+                       @bind-Value="userInfo.Password" />
+        </div>
+        <ValidationMessage For="@(() => userInfo.Password)"
+                           class="validation-message" />
+
+        <!-- Botón -->
+        <button type="submit" class="btn-registro">Registrarme</button>
+    </EditForm>
+</div>
 
 @code {
-	private UserInfoDTO userInfo = new UserInfoDTO();
+    private UserInfoDTO userInfo = new();
 
+    private async Task CrearUsuario()
+    {
+        // El formulario ya está validado por DataAnnotations al enviarse
+        var response = await Http.PostAsJsonAsync("https://localhost:7123/api/cuentas/crear", userInfo);
 
-	private async Task CrearUsuario()
-	{
-		// Realizar la petición POST
-		var response = await Http.PostAsJsonAsync("https://localhost:7123/api/cuentas/crear", userInfo);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Error del servidor",
+                    Text = errorMessage,
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "Ok"
+                });
+        }
+        else
+        {
+            var userToken = await response.Content.ReadFromJsonAsync<UserTokenDTO>();
+            await loginService.Login(userToken.Token);
 
-		if (!response.IsSuccessStatusCode)
-		{
-			// Manejar el error si la respuesta no es exitosa
-			var errorMessage = await response.Content.ReadAsStringAsync();
-			await Swal.FireAsync("Error", errorMessage, SweetAlertIcon.Error);
-		}
-		else
-		{
-			// Obtener el token de la respuesta y realizar login
-			var userToken = await response.Content.ReadFromJsonAsync<UserTokenDTO>();
-			await loginService.Login(userToken.Token);
-			Navegador.NavigateTo("");
-		}
-	}
+            await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "¡Registro exitoso!",
+                    Text = "Su cuenta se ha creado correctamente.",
+                    Icon = SweetAlertIcon.Success,
+                    ConfirmButtonText = "Òk"
+                });
+
+            Navegador.NavigateTo("/");
+        }
+    }
 }

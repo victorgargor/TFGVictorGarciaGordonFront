@@ -1,112 +1,191 @@
 ﻿@page "/usuarios"
+@attribute [Authorize(Roles = "superadmin")]
 @using BlazorAppVictor.DTOs
 @using BlazorAppVictor.Helpers
 @inject HttpClient Http
 @inject SweetAlertService Swal
 @inject IJSRuntime js
 
-<h3>Índice Usuarios</h3>
+<style>
+	body, input, button {
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	}
 
-<!-- Paginación -->
-<div class="pagination-container">
-    <!-- Botón Anterior -->
-    <button @onclick="() => CambiarPagina(paginaActual - 1)" 
-            class="btn btn-secondary"
-            disabled="@((paginaActual == 1))">
-        Anterior
-    </button>
+	h3 {
+		text-align: center;
+		font-size: 40px;
+		font-weight: bold;
+		color: #333;
+		margin-top: 50px;
+		margin-bottom: 75px;
+	}
 
-    <!-- Números de Páginas -->
-    <span class="mx-2">@paginaActual de @paginasTotales</span>
+	.pagination-container {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
+		text-align: center;
+	}
 
-    <!-- Botón Siguiente -->
-    <button @onclick="() => CambiarPagina(paginaActual + 1)" 
-            class="btn btn-secondary"
-            disabled="@((paginaActual == paginasTotales))">
-        Siguiente
-    </button>
-</div>
+	.btn {
+		padding: 0.5rem 1rem;
+		border: none;
+		border-radius: 6px;
+		font-weight: 500;
+		transition: background 0.3s, transform 0.1s;
+	}
+
+	.btn-secondary {
+		background: linear-gradient(135deg, #5b9bd5 0%, #4a7bb7 100%);
+		color: white;
+	}
+
+		.btn-secondary:hover {
+			background: linear-gradient(135deg, #4a7bb7 0%, #5b9bd5 100%);
+		}
+
+	table.table {
+		width: 100%;
+		max-width: 960px;
+		margin: auto;
+		border-collapse: collapse;
+		background: #fff;
+		border-radius: 12px;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+		overflow: hidden;
+	}
+
+		table.table thead {
+			background-color: #f4f6f9;
+		}
+
+		table.table th, table.table td {
+			padding: 1rem;
+			text-align: left;
+			border-bottom: 1px solid #e5e5e5;
+			vertical-align: middle;
+		}
+
+			table.table th:first-child,
+			table.table td:first-child {
+				width: 120px;
+				text-align: center;
+			}
+
+	/* Asegura que el contenedor no desborde en pantallas pequeñas */
+	.table-responsive-wrapper {
+		padding: 0 1rem;
+		overflow-x: auto;
+	}
+</style>
+
+<h3>Usuarios</h3>
 
 <!-- Listado de Usuarios -->
 <ListadoGenerico Listado="Usuarios">
-    <HayRegistrosCompleto>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Usuario</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var usuario in Usuarios!)
-                {
-                    <tr>
-                        <td>
-                            <a href="/usuarios/editar/@usuario.Id" class="btn btn-success">Editar</a>
-                        </td>
-                        <td>
-                            @usuario.Email
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </HayRegistrosCompleto>
+	<HayRegistrosCompleto>
+		<div class="table-responsive-wrapper">
+			<table class="table">
+				<thead>
+					<tr>
+						<th></th>
+						<th>Usuario</th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (var usuario in Usuarios!)
+					{
+						<tr>
+							<td>
+								<a href="/usuarios/editar/@usuario.Id" class="btn"><i class="bi bi-pencil" style="color: yellowgreen"></i></a>
+							</td>
+							<td>
+								@usuario.Email
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</HayRegistrosCompleto>
 </ListadoGenerico>
 
+<!-- Paginación -->
+<div class="pagination-container mt-3">
+	<!-- Botón Anterior -->
+	<button @onclick="() => CambiarPagina(paginaActual - 1)"
+			class="btn btn-secondary"
+			disabled="@((paginaActual == 1))">
+		Anterior
+	</button>
+
+	<!-- Números de Páginas -->
+	<span class="mx-2">@paginaActual de @paginasTotales</span>
+
+	<!-- Botón Siguiente -->
+	<button @onclick="() => CambiarPagina(paginaActual + 1)"
+			class="btn btn-secondary"
+			disabled="@((paginaActual == paginasTotales))">
+		Siguiente
+	</button>
+</div>
+
 @code {
-    List<UsuarioDTO>? Usuarios = new List<UsuarioDTO>();
-    private int paginaActual = 1;
-    private int paginasTotales = 0;
+	List<UsuarioDTO>? Usuarios = new List<UsuarioDTO>();
+	private int paginaActual = 1;
+	private int paginasTotales = 0;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await Cargar(paginaActual);  // Cargar la primera página
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		await Cargar(paginaActual);  // Cargar la primera página
+	}
 
-    private async Task CambiarPagina(int pagina)
-    {
-        if (pagina >= 1 && pagina <= paginasTotales)  // Verifica que la página esté dentro de los límites
-        {
-            paginaActual = pagina;
-            await Cargar(paginaActual);  // Cargar los datos para la página seleccionada
-        }
-    }
+	private async Task CambiarPagina(int pagina)
+	{
+		if (pagina >= 1 && pagina <= paginasTotales)  // Verifica que la página esté dentro de los límites
+		{
+			paginaActual = pagina;
+			await Cargar(paginaActual);  // Cargar los datos para la página seleccionada
+		}
+	}
 
-    private async Task Cargar(int pagina)
-    {
-        var tokenObj = await js.ObtenerDeLocalStorage("TOKENKEY");
-        var token = tokenObj?.ToString();
+	private async Task Cargar(int pagina)
+	{
+		var tokenObj = await js.ObtenerDeLocalStorage("TOKENKEY");
+		var token = tokenObj?.ToString();
 
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            Http.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        }
+		if (!string.IsNullOrWhiteSpace(token))
+		{
+			Http.DefaultRequestHeaders.Authorization =
+				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+		}
 
-        var paginacion = new PaginacionDTO
-        {
-            Pagina = pagina,
-            CantidadRegistros = 5
-        };
+		var paginacion = new PaginacionDTO
+			{
+				Pagina = pagina,
+				CantidadRegistros = 5
+			};
 
-        var url = $"https://localhost:7123/api/usuarios?pagina={paginacion.Pagina}&cantidadRegistros={paginacion.CantidadRegistros}";
+		var url = $"https://localhost:7123/api/usuarios?pagina={paginacion.Pagina}&cantidadRegistros={paginacion.CantidadRegistros}";
 
-        var respuesta = await Http.GetAsync(url);
+		var respuesta = await Http.GetAsync(url);
 
-        if (respuesta.IsSuccessStatusCode)
-        {
-            if (respuesta.Headers.Contains("totalPaginas"))
-            {
-                paginasTotales = int.Parse(respuesta.Headers.GetValues("totalPaginas").FirstOrDefault()!);
-            }
+		if (respuesta.IsSuccessStatusCode)
+		{
+			if (respuesta.Headers.Contains("totalPaginas"))
+			{
+				paginasTotales = int.Parse(respuesta.Headers.GetValues("totalPaginas").FirstOrDefault()!);
+			}
 
-            Usuarios = await respuesta.Content.ReadFromJsonAsync<List<UsuarioDTO>>() ?? new List<UsuarioDTO>();  // Evita null
-        }
-        else
-        {
-            var error = await respuesta.Content.ReadAsStringAsync();
-            await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
-        }
-    }
+			Usuarios = await respuesta.Content.ReadFromJsonAsync<List<UsuarioDTO>>() ?? new List<UsuarioDTO>();  // Evita null
+		}
+		else
+		{
+			var error = await respuesta.Content.ReadAsStringAsync();
+			await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
+		}
+	}
 }
