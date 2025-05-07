@@ -1,0 +1,66 @@
+﻿@page "/ver-claims"
+@using BlazorAppVictor.Auth
+@using System.Security.Claims
+@inject TokenService TokenService
+
+<h3>Claims del Usuario</h3>
+
+@if (claims == null)
+{
+    <p>Cargando claims...</p>
+}
+else
+{
+    <h4>Todos los claims</h4>
+    <ul>
+        @foreach (var claim in claims)
+        {
+            <li>@claim.Type: @claim.Value</li>
+        }
+    </ul>
+
+    <h4>Permisos (claim.Type == "permiso")</h4>
+    @if (permisos.Count == 0)
+    {
+        <p>No tienes permisos</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var permiso in permisos)
+            {
+                <li>@permiso</li>
+            }
+        </ul>
+    }
+
+    <h4>Expiración del token</h4>
+    <p>@expDate</p>
+}
+
+@code {
+    private List<Claim> claims;
+    private List<string> permisos = new();
+    private string expDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        claims = await TokenService.ObtenerClaimsDesdeToken()
+                 ?? new List<Claim>();
+
+        // 1) Extraer permisos: todos los claims con Type == "permiso"
+        permisos = claims
+            .Where(c => c.Type == "permiso")
+            .Select(c => c.Value)
+            .ToList();
+
+        // 2) Extraer exp (fecha de expiración). El type del claim es literalmente "exp"
+        var expClaim = claims.FirstOrDefault(c => c.Type == "exp");
+        if (expClaim != null && long.TryParse(expClaim.Value, out var ts))
+        {
+            expDate = DateTimeOffset
+                .FromUnixTimeSeconds(ts)
+                .ToString("yyyy-MM-dd HH:mm:ss");
+        }
+    }
+}

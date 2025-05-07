@@ -1,0 +1,125 @@
+﻿@page "/permisos"
+@inject HttpClient Http
+@using BlazorAppVictor.DTOs
+@using EjerciciosVictorAPI.DTOs
+@using System.Net.Http.Json
+
+<style>
+    h3 {
+        text-align: center;
+        font-size: 40px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 50px;
+        margin-bottom: 75px;
+    }
+</style>
+
+<h3 class="mb-5">Gestión de permisos por rol</h3>
+
+@if (roles.Count == 0 || permisosDisponibles.Count == 0 || permisosPorRol.Count == 0)
+{
+    <p>Cargando datos...</p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-outline-secondary mt-5" @onclick="MostrarRolAnterior" disabled="@(!PuedeRetroceder)">←</button>
+        <h5 class="mt-5 mb-0">Rol: @roles[rolActualIndex].Nombre</h5>
+        <button class="btn btn-outline-secondary mt-5" @onclick="MostrarRolSiguiente" disabled="@(!PuedeAvanzar)">→</button>
+    </div>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Permiso</th>
+                <th>Asignado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var permiso in permisosDisponibles)
+            {
+                var rolActual = roles[rolActualIndex];
+                var asignados = permisosPorRol[rolActual.Id];
+                var isAssigned = asignados.Any(p => p.Id == permiso.Id);
+                <tr>
+                    <td>@permiso.Nombre</td>
+                    <td>@(isAssigned ? "Sí" : "No")</td>
+                    <td>
+                        @if (isAssigned)
+                        {
+                            <button class="btn btn-danger btn-sm" @onclick="() => RemoverPermiso(rolActual.Id, permiso.Id)">Remover</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="() => AsignarPermiso(rolActual.Id, permiso.Id)">Asignar</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PermisoDTO> permisosDisponibles = new();
+    private List<RolDTO> roles = new();
+    private Dictionary<string, List<PermisoDTO>> permisosPorRol = new();
+    private int rolActualIndex = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        roles = await Http.GetFromJsonAsync<List<RolDTO>>("https://localhost:7123/api/usuarios/roles");
+        permisosDisponibles = await Http.GetFromJsonAsync<List<PermisoDTO>>("https://localhost:7123/api/permisos");
+
+        foreach (var rol in roles)
+        {
+            var permisos = await Http.GetFromJsonAsync<List<PermisoDTO>>($"https://localhost:7123/api/permisos/{rol.Id}");
+            permisosPorRol[rol.Id] = permisos;
+        }
+    }
+
+    private bool PuedeAvanzar => rolActualIndex < roles.Count - 1;
+    private bool PuedeRetroceder => rolActualIndex > 0;
+
+    private void MostrarRolSiguiente()
+    {
+        if (PuedeAvanzar)
+            rolActualIndex++;
+    }
+
+    private void MostrarRolAnterior()
+    {
+        if (PuedeRetroceder)
+            rolActualIndex--;
+    }
+
+    private async Task AsignarPermiso(string rolId, string permisoId)
+    {
+        var dto = new RolPermisoDTO { RolId = rolId, PermisoId = permisoId };
+        var response = await Http.PostAsJsonAsync("https://localhost:7123/api/permisos/asignar", dto);
+        if (response.IsSuccessStatusCode)
+        {
+            permisosPorRol[rolId] = await Http.GetFromJsonAsync<List<PermisoDTO>>($"https://localhost:7123/api/permisos/{rolId}");
+        }
+        else
+        {
+            Console.WriteLine($"Error al asignar permiso a rol {rolId}");
+        }
+    }
+
+    private async Task RemoverPermiso(string rolId, string permisoId)
+    {
+        var dto = new RolPermisoDTO { RolId = rolId, PermisoId = permisoId };
+        var response = await Http.PostAsJsonAsync("https://localhost:7123/api/permisos/remover", dto);
+        if (response.IsSuccessStatusCode)
+        {
+            permisosPorRol[rolId] = await Http.GetFromJsonAsync<List<PermisoDTO>>($"https://localhost:7123/api/permisos/{rolId}");
+        }
+        else
+        {
+            Console.WriteLine($"Error al remover permiso de rol {rolId}");
+        }
+    }
+}

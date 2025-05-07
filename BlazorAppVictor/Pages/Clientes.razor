@@ -181,10 +181,14 @@
 			</button>
 		</div>
 
-		<!-- Botón Crear -->
-		<div class="col-md-3 d-flex justify-content-end">
-			<button class="btn btn-primary btn-crear" @onclick="CrearCliente">Crear cliente</button>
-		</div>
+		<AuthorizeView Policy="CrearCliente">
+			<Authorized>
+				<!-- Botón Crear -->
+				<div class="col-md-3 d-flex justify-content-end">
+					<button class="btn btn-primary btn-crear" @onclick="CrearCliente">Crear cliente</button>
+				</div>
+			</Authorized>
+		</AuthorizeView>
 	</div>
 </div>
 
@@ -229,27 +233,39 @@
 							<button @onclick="() => VerCliente(cliente.DNI)">
 								<i class="bi bi-eye" style="color: dodgerblue"></i>
 							</button>
-							<!-- Editar Cliente -->
-							<button @onclick="() => EditarCliente(cliente.DNI)">
-								<i class="bi bi-pencil" style="color: yellowgreen"></i>
-							</button>
-							<!-- Eliminar Cliente -->
-							<button @onclick="() => EliminarCliente(cliente.DNI)">
-								<i class="bi bi-person-x" style="color: red"></i>
-							</button>
-							<!-- Depende del estado se muestra baja o reactivar -->
-							@if (cliente.FechaBaja.HasValue)
-							{
-								<button @onclick="() => ReactivarCliente(cliente.DNI)">
-									<i class="bi bi-arrow-bar-up"></i>
-								</button>
-							}
-							else
-							{
-								<button @onclick="() => DarBaja(cliente.DNI)">
-									<i class="bi bi-arrow-bar-down" style="color: red"></i>
-								</button>
-							}
+							<AuthorizeView Policy="ModificarCliente">
+								<Authorized>
+									<!-- Editar Cliente -->
+									<button @onclick="() => EditarCliente(cliente.DNI)">
+										<i class="bi bi-pencil" style="color: yellowgreen"></i>
+									</button>
+								</Authorized>
+							</AuthorizeView>
+							<AuthorizeView Policy="EliminarCliente">
+								<Authorized>
+									<!-- Eliminar Cliente -->
+									<button @onclick="() => EliminarCliente(cliente.DNI)">
+										<i class="bi bi-person-x" style="color: red"></i>
+									</button>
+								</Authorized>
+							</AuthorizeView>
+							<AuthorizeView Policy="ModificarCliente">
+								<Authorized>
+									<!-- Depende del estado se muestra baja o reactivar -->
+									@if (cliente.FechaBaja.HasValue)
+									{
+										<button @onclick="() => ReactivarCliente(cliente.DNI)">
+											<i class="bi bi-arrow-bar-up"></i>
+										</button>
+									}
+									else
+									{
+										<button @onclick="() => DarBaja(cliente.DNI)">
+											<i class="bi bi-arrow-bar-down" style="color: red"></i>
+										</button>
+									}
+								</Authorized>
+							</AuthorizeView>						
 						</td>
 						<!-- Muestro los datos -->
 						<td class="text-start">@cliente.DNI</td>
@@ -338,7 +354,7 @@
 			queryParams.Add($"estado={estadoSeleccionado}");
 			queryParams.Add($"orden={ordenPor.ToLower()}");
 
-			
+
 			// Se construye la query string final
 			var queryString = string.Join("&", queryParams);
 			var url = $"https://localhost:7123/api/clientes/buscar?{queryString}";

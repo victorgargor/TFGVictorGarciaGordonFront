@@ -124,7 +124,11 @@ else
     <!-- Crear recibo solo si el cliente es "Activo" -->
     @if (!cliente.FechaBaja.HasValue)
     {
-        <button class="btn btn-primary btn-crear" @onclick="CrearRecibo">Crear recibo</button>
+        <AuthorizeView Policy="CrearRecibo">
+            <Authorized>
+                <button class="btn btn-primary btn-crear" @onclick="CrearRecibo">Crear recibo</button>
+            </Authorized>
+        </AuthorizeView>
     }
 
     <h4>Recibos del cliente</h4>
@@ -155,8 +159,17 @@ else
                 {
                     <tr>
                         <td>
-                            <button class="btn" @onclick="() => EditarRecibo(recibo.Id)"><i class="bi bi-pencil" style="color: yellowgreen"></i></button>
-                            <button class="btn" @onclick="() => EliminarRecibo(recibo.Id)"><i class="bi bi-trash" style="color: red"></i></button>
+                            <AuthorizeView Policy="ModificarRecibo">
+                                <Authorized>
+                                    <button class="btn" @onclick="() => EditarRecibo(recibo.Id)"><i class="bi bi-pencil" style="color: yellowgreen"></i></button>
+                                </Authorized>
+                            </AuthorizeView>
+                            <AuthorizeView Policy="EliminarRecibo">
+                                <Authorized>
+                                    <button class="btn" @onclick="() => EliminarRecibo(recibo.Id)"><i class="bi bi-trash" style="color: red"></i>
+                                    </button>
+                                </Authorized>
+                            </AuthorizeView>                                               
                         </td>
                         <td>@recibo.NumeroRecibo</td>
                         <td>@recibo.FechaEmision.ToString("yyyy/MM/dd")</td>

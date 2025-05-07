@@ -25,36 +25,41 @@
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
 	}
 
-	.table th,
-	.table td {
-		border-bottom: 1px solid #e5e5e5;
-	}
+		.table th,
+		.table td {
+			border-bottom: 1px solid #e5e5e5;
+		}
 
-	.table th {
-		background-color: #f4f6f9;
-		padding: 1rem;
-		text-align: left;
-	}
+		.table th {
+			background-color: #f4f6f9;
+			padding: 1rem;
+			text-align: left;
+		}
 
-	.table td {
-		vertical-align: middle;
-		font-size: 1rem;
-		line-height: 1.5;
-		padding: 1rem;
-	}
+		.table td {
+			vertical-align: middle;
+			font-size: 1rem;
+			line-height: 1.5;
+			padding: 1rem;
+		}
 
-	.table td.icon-cell {
-		padding: 0.5rem;
-		text-align: center;
-		vertical-align: middle;
-		width: 60px;
-	}
+			.table td.icon-cell {
+				padding: 0.25rem 0.5rem;
+				text-align: center;
+				vertical-align: middle;
+				width: 50px;
+			}
 
-	.table td:not(.icon-cell) {
-		display: flex;
-		align-items: center;
-		height: 100%;
-	}
+				.table td.icon-cell .btn {
+					padding: 0.25rem;
+					height: auto;
+				}
+
+			.table td:not(.icon-cell) {
+				display: flex;
+				align-items: center;
+				height: 57.7px;
+			}
 
 	.table-responsive-wrapper {
 		overflow-x: auto;
@@ -62,7 +67,7 @@
 
 	.btn {
 		padding: 0.5rem 1rem;
-		border-radius: 6px;
+		margin-left: 10px;
 		transition: background 0.3s, transform 0.1s;
 		display: flex;
 		align-items: center;
@@ -112,7 +117,8 @@
 	}
 </style>
 
-<h3>Editar usuario</h3>
+<h3>
+	<h3>@(nombreUsuario is null ? "Cargando..." : nombreUsuario)</h3></h3>
 
 @if (roles is null || rolesAsignados is null)
 {
@@ -168,6 +174,7 @@ else
 	private List<RolDTO>? roles;
 	private List<string>? rolesAsignados;
 	private string rolSeleccionado = "0";
+	private string? nombreUsuario;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -190,6 +197,17 @@ else
 		catch (Exception ex)
 		{
 			await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
+		}
+
+		var responseNombre = await Http.GetAsync($"https://localhost:7123/api/usuarios/obtenerNombre/{UsuarioId}");
+		if (responseNombre.IsSuccessStatusCode)
+		{
+			nombreUsuario = await responseNombre.Content.ReadAsStringAsync();
+			nombreUsuario = nombreUsuario.Trim('"'); // elimina comillas del string JSON plano
+		}
+		else
+		{
+			nombreUsuario = "Usuario desconocido";
 		}
 	}
 
