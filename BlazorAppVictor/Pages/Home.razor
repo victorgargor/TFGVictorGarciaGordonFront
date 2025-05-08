@@ -69,12 +69,15 @@
 <div class="container">
 	<h1>¡Bienvenido!</h1>
 
+	<!-- AuthorizeView para mostrar contenido según el estado de autorización del usuario -->
 	<AuthorizeView>
 		<Authorized Context="auth">
+			<!-- Mensaje de bienvenida para usuarios autorizados -->
 			<div class="not-authorized">
 				Seleccione la página a la que desea navegar
 			</div>
 
+			<!-- Botón para acceder a clientes y recibos solo para usuarios con ciertos roles -->
 			@if (auth.User.IsInRole("usuario")
 					|| auth.User.IsInRole("admin")
 					|| auth.User.IsInRole("superadmin"))
@@ -84,6 +87,7 @@
 				</button>
 			}
 
+			<!-- Botón solo visible para superadministradores -->
 			@if (auth.User.IsInRole("superadmin"))
 			{
 				<button class="btn-operation" @onclick="IrAUsuarios">
@@ -91,6 +95,8 @@
 				</button>
 			}
 		</Authorized>
+
+		<!-- Mensaje para usuarios no autorizados -->
 		<NotAuthorized>
 			<div class="not-authorized">
 				Regístrese o inicie sesión con una cuenta existente para poder acceder al contenido de esta página
@@ -100,15 +106,20 @@
 </div>
 
 @code {
+	// Inyección de dependencias para navegar y manejar la autorización
 	[Inject] private NavigationManager NavigationManager { get; set; } = default!;
 
+	// Método que redirige al usuario a la página de clientes
 	private void IrACRUD()
 	{
-		NavigationManager.NavigateTo("/clientes");
+		// Navega a la página de clientes
+		NavigationManager.NavigateTo("/clientes");  
 	}
 
+	// Método que redirige al usuario a la página de usuarios (solo para el rol superadmin)
 	private void IrAUsuarios()
 	{
-		NavigationManager.NavigateTo("/usuarios");
+		// Navega a la página de usuarios
+		NavigationManager.NavigateTo("/usuarios");  
 	}
 }

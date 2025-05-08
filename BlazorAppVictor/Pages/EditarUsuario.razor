@@ -3,6 +3,7 @@
 @using BlazorAppVictor.DTOs
 @using System.Text
 @using System.Text.Json
+@using BlazorAppVictor.Entidades
 @inject HttpClient Http
 @inject SweetAlertService Swal
 
@@ -118,7 +119,8 @@
 </style>
 
 <h3>
-	<h3>@(nombreUsuario is null ? "Cargando..." : nombreUsuario)</h3></h3>
+	<h3>@(nombreUsuario is null ? "Cargando..." : nombreUsuario)</h3>
+</h3>
 
 @if (roles is null || rolesAsignados is null)
 {
@@ -127,7 +129,7 @@
 else
 {
 	<div class="form-inline selector-container">
-		<!-- Selección de Rol -->
+		<!-- Selector roles -->
 		<select class="form-select mb-2" @bind="rolSeleccionado">
 			<option value="0">--Seleccione un rol--</option>
 			@foreach (var rol in roles)
@@ -136,13 +138,14 @@ else
 			}
 		</select>
 
-		<!-- Botón para Asignar Rol -->
+		<!-- Botón Asignar-->
 		<button class="btn btn-info mb-2" title="Asignar rol" @onclick="AsignarRol">
 			<i class="bi bi-person-plus-fill"></i>
 		</button>
 	</div>
 
 	<div class="table-responsive-wrapper">
+		<!-- Tabla Roles Asignados -->
 		<table class="table">
 			<thead>
 				<tr>
@@ -168,54 +171,77 @@ else
 }
 
 @code {
+	// Identificador del usuario a editar
 	[Parameter]
 	public string UsuarioId { get; set; } = null!;
 
+	// Lista de roles disponibles para asignar
 	private List<RolDTO>? roles;
+
+	// Lista de roles asignados al usuario
 	private List<string>? rolesAsignados;
+
+	// Valor por defecto del rol seleccionado
 	private string rolSeleccionado = "0";
+
+	// Nombre del usuario que se va a editar
 	private string? nombreUsuario;
 
+	// Método que se ejecuta cuando se inicializa el componente
 	protected override async Task OnInitializedAsync()
 	{
 		try
 		{
+			// Solicito los roles disponibles para asignar al usuario
 			var responseRoles = await Http.GetAsync("https://localhost:7123/api/usuarios/roles");
+
 			if (!responseRoles.IsSuccessStatusCode)
 			{
+				// Si hay error, muestro un mensaje
 				var mensajeError = await responseRoles.Content.ReadAsStringAsync();
 				await Swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
 			}
+			// Si no hay error
 			else
 			{
 				var jsonRoles = await responseRoles.Content.ReadAsStringAsync();
 				roles = JsonSerializer.Deserialize<List<RolDTO>>(jsonRoles, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 			}
 
+			// Cargo los roles asignados al usuario
 			await CargarRolesAsignados();
 		}
 		catch (Exception ex)
 		{
+			// Manejo de excepciones
 			await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
 		}
 
+		// Solicito el nombre del usuario basado en el UsuarioId
 		var responseNombre = await Http.GetAsync($"https://localhost:7123/api/usuarios/obtenerNombre/{UsuarioId}");
+
+		// Si se encuentra el nombre del usuario
 		if (responseNombre.IsSuccessStatusCode)
 		{
 			nombreUsuario = await responseNombre.Content.ReadAsStringAsync();
-			nombreUsuario = nombreUsuario.Trim('"'); // elimina comillas del string JSON plano
+			nombreUsuario = nombreUsuario.Trim('"');
 		}
 		else
 		{
+			// En caso de error
 			nombreUsuario = "Usuario desconocido";
 		}
 	}
 
+	// Método que carga los roles asignados al usuario
 	private async Task CargarRolesAsignados()
 	{
 		try
 		{
+			// Hago la petición
 			var response = await Http.GetAsync($"https://localhost:7123/api/usuarios/obtenerRoles/{UsuarioId}");
+
+			// Si ña respuesta fue exitosa
 			if (response.IsSuccessStatusCode)
 			{
 				var json = await response.Content.ReadAsStringAsync();
@@ -223,30 +249,36 @@ else
 			}
 			else
 			{
+				// En caso de error
 				await Swal.FireAsync("Error", "No se pudieron cargar los roles asignados", SweetAlertIcon.Error);
 			}
 		}
+		// Manejo de errores
 		catch (Exception ex)
 		{
 			await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
 		}
 	}
 
+	// Método para asignar un rol al usuario
 	private async Task AsignarRol()
 	{
 		await EditarRol("https://localhost:7123/api/usuarios/asignarRol");
 	}
 
+	// Método para remover un rol asignado al usuario
 	private async Task RemoverRol(string rol)
 	{
 		var rolDTO = new EditarRolDTO { Rol = rol, UsuarioId = UsuarioId };
 		await EditarRol("https://localhost:7123/api/usuarios/removerRol", rolDTO);
 	}
 
+	// Método para asignar o eliminar un rol
 	private async Task EditarRol(string url, EditarRolDTO? rolDTOParam = null)
 	{
 		var dto = rolDTOParam ?? new EditarRolDTO { Rol = rolSeleccionado, UsuarioId = UsuarioId };
 
+		// Verifico si el rol seleccionado es válido
 		if (string.IsNullOrWhiteSpace(dto.Rol) || dto.Rol == "0")
 		{
 			await Swal.FireAsync("Error", "Debe seleccionar un rol", SweetAlertIcon.Error);
@@ -258,13 +290,16 @@ else
 			var json = JsonSerializer.Serialize(dto);
 			var content = new StringContent(json, Encoding.UTF8, "application/json");
 
+			// Hago la petición
 			var response = await Http.PostAsync(url, content);
 
+			// En caso de error
 			if (!response.IsSuccessStatusCode)
 			{
 				var mensajeError = await response.Content.ReadAsStringAsync();
 				await Swal.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
 			}
+			// Si la respuesta fue exitosa
 			else
 			{
 				await Swal.FireAsync("Exitoso", "Operación realizada con éxito", SweetAlertIcon.Success);
@@ -273,6 +308,7 @@ else
 		}
 		catch (Exception ex)
 		{
+			// Manejo de excepciones
 			await Swal.FireAsync("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
 		}
 	}

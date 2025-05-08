@@ -46,6 +46,6 @@ void ConfigureServices(IServiceCollection services)
     services.AddScoped<ILoginService, ProveedorAutenticacionJWT>(proveedor =>
         proveedor.GetRequiredService<ProveedorAutenticacionJWT>());
 
-    // ?? Registro del TokenService
+    // Registro del TokenService
     services.AddScoped<TokenService>();
 }

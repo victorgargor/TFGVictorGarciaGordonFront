@@ -3,14 +3,16 @@
 @inject ILoginService loginService
 @inject NavigationManager Navegador
 
-
 <p>Deslogueando...</p>
 
 @code {
-
+	// Este método se ejecuta automáticamente al inicializar el componente
 	protected async override Task OnInitializedAsync()
 	{
+		// Cierro la sesión del usuario
 		await loginService.Logout();
+
+		// Redirijo a la página principal 
 		Navegador.NavigateTo("");
 	}
 }

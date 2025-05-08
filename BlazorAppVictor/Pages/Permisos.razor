@@ -6,12 +6,12 @@
 
 <style>
     h3 {
-        text-align: center;
-        font-size: 40px;
-        font-weight: bold;
-        color: #333;
-        margin-top: 50px;
-        margin-bottom: 75px;
+    text-align: center;
+    font-size: 40px;
+    font-weight: bold; 
+    color: #333; 
+    margin-top: 50px; 
+    margin-bottom: 75px; 
     }
 </style>
 
@@ -23,36 +23,43 @@
 }
 else
 {
+    <!-- Paginación roles -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <button class="btn btn-outline-secondary mt-5" @onclick="MostrarRolAnterior" disabled="@(!PuedeRetroceder)">←</button>
         <h5 class="mt-5 mb-0">Rol: @roles[rolActualIndex].Nombre</h5>
         <button class="btn btn-outline-secondary mt-5" @onclick="MostrarRolSiguiente" disabled="@(!PuedeAvanzar)">→</button>
     </div>
 
+    <!-- Tabla que muestra los permisos asignados a cada rol -->
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Permiso</th>
-                <th>Asignado</th>
-                <th>Acciones</th>
+                <th>Permiso</th> 
+                <th>Asignado</th> 
+                <th>Acciones</th> 
             </tr>
         </thead>
         <tbody>
             @foreach (var permiso in permisosDisponibles)
             {
+                // Obtengo el rol actual
                 var rolActual = roles[rolActualIndex];
+
+                // Obtengo los permisos asignados a ese rol
                 var asignados = permisosPorRol[rolActual.Id];
-                var isAssigned = asignados.Any(p => p.Id == permiso.Id);
+
+                // Verifico si el permiso ya está asignado
+                var isAssigned = asignados.Any(p => p.Id == permiso.Id); 
                 <tr>
                     <td>@permiso.Nombre</td>
-                    <td>@(isAssigned ? "Sí" : "No")</td>
-                    <td>
+                    <td>@(isAssigned ? "Sí" : "No")</td> 
+                    <td>                     
                         @if (isAssigned)
                         {
                             <button class="btn btn-danger btn-sm" @onclick="() => RemoverPermiso(rolActual.Id, permiso.Id)">Remover</button>
                         }
                         else
-                        {
+                        {                           
                             <button class="btn btn-primary btn-sm" @onclick="() => AsignarPermiso(rolActual.Id, permiso.Id)">Asignar</button>
                         }
                     </td>
@@ -63,62 +70,98 @@ else
 }
 
 @code {
+    // Lista que contiene todos los permisos disponibles
     private List<PermisoDTO> permisosDisponibles = new();
+
+    // Lista que contiene todos los roles disponibles
     private List<RolDTO> roles = new();
+
+    // Diccionario que mapea los IDs de los roles a los permisos asignados a cada rol
     private Dictionary<string, List<PermisoDTO>> permisosPorRol = new();
+
+    // Índice del rol actual que se está visualizando
     private int rolActualIndex = 0;
 
+    // Método que se ejecuta al cargar la página para obtener los roles y permisos
     protected override async Task OnInitializedAsync()
     {
+        // Cargo los roles desde la API
         roles = await Http.GetFromJsonAsync<List<RolDTO>>("https://localhost:7123/api/usuarios/roles");
+
+        // Cargo los permisos disponibles desde la API
         permisosDisponibles = await Http.GetFromJsonAsync<List<PermisoDTO>>("https://localhost:7123/api/permisos");
 
+        // Cargo los permisos asignados para cada rol
         foreach (var rol in roles)
         {
+            // Asocia los permisos al rol correspondiente
             var permisos = await Http.GetFromJsonAsync<List<PermisoDTO>>($"https://localhost:7123/api/permisos/{rol.Id}");
-            permisosPorRol[rol.Id] = permisos;
+            permisosPorRol[rol.Id] = permisos; 
         }
     }
 
+    // Propiedad que determina si se puede avanzar al siguiente rol
     private bool PuedeAvanzar => rolActualIndex < roles.Count - 1;
+
+    // Propiedad que determina si se puede retroceder al rol anterior
     private bool PuedeRetroceder => rolActualIndex > 0;
 
+    // Método para mostrar el siguiente rol en la lista
     private void MostrarRolSiguiente()
     {
+        // Verifico si hay un rol siguiente y avanza si lo hay
         if (PuedeAvanzar)
-            rolActualIndex++;
+        {
+            rolActualIndex++; 
+        }     
     }
 
+    // Método para mostrar el rol anterior en la lista
     private void MostrarRolAnterior()
     {
         if (PuedeRetroceder)
-            rolActualIndex--;
+        {
+            // Verifico si hay un rol anterior y retrocede si lo hay
+            rolActualIndex--; 
+        }
     }
 
+    // Método para asignar un permiso a un rol
     private async Task AsignarPermiso(string rolId, string permisoId)
     {
-        var dto = new RolPermisoDTO { RolId = rolId, PermisoId = permisoId };
-        var response = await Http.PostAsJsonAsync("https://localhost:7123/api/permisos/asignar", dto);
+        // Creo el DTO para asignar el permiso
+        var dto = new RolPermisoDTO { RolId = rolId, PermisoId = permisoId }; 
+
+        // Llamo a la API para asignar el permiso
+        var response = await Http.PostAsJsonAsync("https://localhost:7123/api/permisos/asignar", dto); 
         if (response.IsSuccessStatusCode)
         {
+            // Si la asignación es exitosa, actualizo los permisos del rol
             permisosPorRol[rolId] = await Http.GetFromJsonAsync<List<PermisoDTO>>($"https://localhost:7123/api/permisos/{rolId}");
         }
         else
         {
+            // Si hay un error al asignar el permiso, muestro un mensaje de error
             Console.WriteLine($"Error al asignar permiso a rol {rolId}");
         }
     }
 
+    // Método para remover un permiso de un rol
     private async Task RemoverPermiso(string rolId, string permisoId)
     {
-        var dto = new RolPermisoDTO { RolId = rolId, PermisoId = permisoId };
-        var response = await Http.PostAsJsonAsync("https://localhost:7123/api/permisos/remover", dto);
+        // Creo el DTO para remover el permiso
+        var dto = new RolPermisoDTO { RolId = rolId, PermisoId = permisoId }; 
+
+        // Llamo a la API para remover el permiso
+        var response = await Http.PostAsJsonAsync("https://localhost:7123/api/permisos/remover", dto); 
         if (response.IsSuccessStatusCode)
         {
+            // Si se ha removido correctamente, actualizo los permisos del rol
             permisosPorRol[rolId] = await Http.GetFromJsonAsync<List<PermisoDTO>>($"https://localhost:7123/api/permisos/{rolId}");
         }
         else
         {
+            // Si hay un error al remover el permiso, muestro un mensaje de error
             Console.WriteLine($"Error al remover permiso de rol {rolId}");
         }
     }

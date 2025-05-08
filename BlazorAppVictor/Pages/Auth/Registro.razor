@@ -21,7 +21,6 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
 
-        /* Título */
         .registro-card h3 {
             font-size: 1.75rem;
             font-weight: 600;
@@ -117,22 +116,27 @@
         <ValidationMessage For="@(() => userInfo.Password)"
                            class="validation-message" />
 
-        <!-- Botón -->
         <button type="submit" class="btn-registro">Registrarme</button>
     </EditForm>
 </div>
 
 @code {
+    // Creo una instancia del modelo que se enlaza al formulario
     private UserInfoDTO userInfo = new();
 
+    // Método que se ejecuta cuando se envía el formulario y pasa la validación
     private async Task CrearUsuario()
     {
-        // El formulario ya está validado por DataAnnotations al enviarse
+        // Envio la solicitud HTTP POST al backend para crear el usuario
         var response = await Http.PostAsJsonAsync("https://localhost:7123/api/cuentas/crear", userInfo);
 
+        // Si la hay un error
         if (!response.IsSuccessStatusCode)
         {
+            // Obtengo el mensaje de error del servidor
             var errorMessage = await response.Content.ReadAsStringAsync();
+
+            // Muestro una alerta con el error
             await Swal.FireAsync(new SweetAlertOptions
                 {
                     Title = "Error del servidor",
@@ -143,9 +147,13 @@
         }
         else
         {
+            // Si el registro fue exitoso, obtengo el token devuelto
             var userToken = await response.Content.ReadFromJsonAsync<UserTokenDTO>();
+
+            // Inicio sesión automáticamente con ese token
             await loginService.Login(userToken.Token);
 
+            // Muestro el mensaje de éxito
             await Swal.FireAsync(new SweetAlertOptions
                 {
                     Title = "¡Registro exitoso!",
@@ -154,6 +162,7 @@
                     ConfirmButtonText = "Òk"
                 });
 
+            // Redirijo al usuario a la página principal
             Navegador.NavigateTo("/");
         }
     }

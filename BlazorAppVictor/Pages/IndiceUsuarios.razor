@@ -43,9 +43,9 @@
 		color: white;
 	}
 
-		.btn-secondary:hover {
-			background: linear-gradient(135deg, #4a7bb7 0%, #5b9bd5 100%);
-		}
+	.btn-secondary:hover {
+		background: linear-gradient(135deg, #4a7bb7 0%, #5b9bd5 100%);
+	}
 
 	table.table {
 		width: 100%;
@@ -58,24 +58,23 @@
 		overflow: hidden;
 	}
 
-		table.table thead {
-			background-color: #f4f6f9;
-		}
+	table.table thead {
+		background-color: #f4f6f9;
+	}
 
-		table.table th, table.table td {
-			padding: 1rem;
-			text-align: left;
-			border-bottom: 1px solid #e5e5e5;
-			vertical-align: middle;
-		}
+	table.table th, table.table td {
+		padding: 1rem;
+		text-align: left;
+		border-bottom: 1px solid #e5e5e5;
+		vertical-align: middle;
+	}
 
-			table.table th:first-child,
-			table.table td:first-child {
-				width: 120px;
-				text-align: center;
-			}
+	table.table th:first-child,
+	table.table td:first-child {
+		width: 120px;
+		text-align: center;
+	}
 
-	/* Asegura que el contenedor no desborde en pantallas pequeñas */
 	.table-responsive-wrapper {
 		padding: 0 1rem;
 		overflow-x: auto;
@@ -84,7 +83,7 @@
 
 <h3>Usuarios</h3>
 
-<!-- Listado de Usuarios -->
+
 <ListadoGenerico Listado="Usuarios">
 	<HayRegistrosCompleto>
 		<div class="table-responsive-wrapper">
@@ -96,14 +95,14 @@
 					</tr>
 				</thead>
 				<tbody>
-					@foreach (var usuario in Usuarios!)
+					@foreach (var usuario in Usuarios!)  
 					{
 						<tr>
 							<td>
 								<a href="/usuarios/editar/@usuario.Id" class="btn"><i class="bi bi-pencil" style="color: yellowgreen"></i></a>
 							</td>
 							<td>
-								@usuario.Email
+								@usuario.Email  
 							</td>
 						</tr>
 					}
@@ -122,7 +121,7 @@
 		Anterior
 	</button>
 
-	<!-- Números de Páginas -->
+	<!-- Página actual y total de páginas -->
 	<span class="mx-2">@paginaActual de @paginasTotales</span>
 
 	<!-- Botón Siguiente -->
@@ -134,56 +133,72 @@
 </div>
 
 @code {
+    // Lista que contiene los usuarios
 	List<UsuarioDTO>? Usuarios = new List<UsuarioDTO>();
+
+	// Variables para el control de la paginación
 	private int paginaActual = 1;
 	private int paginasTotales = 0;
 
+    // Método que se ejecuta al cargar la página, obtiene la primera página de usuarios
 	protected override async Task OnInitializedAsync()
 	{
-		await Cargar(paginaActual);  // Cargar la primera página
+		await Cargar(paginaActual);  
 	}
 
+    // Método para cambiar de página
 	private async Task CambiarPagina(int pagina)
 	{
-		if (pagina >= 1 && pagina <= paginasTotales)  // Verifica que la página esté dentro de los límites
+		// Verifico que la página esté dentro de los límites
+		if (pagina >= 1 && pagina <= paginasTotales)  
 		{
 			paginaActual = pagina;
-			await Cargar(paginaActual);  // Cargar los datos para la página seleccionada
+			// Cargo los datos de la nueva página
+			await Cargar(paginaActual);  
 		}
 	}
 
+    // Método para cargar los usuarios con paginación
 	private async Task Cargar(int pagina)
 	{
+		// Obtengo el token de autenticación del localStorage
 		var tokenObj = await js.ObtenerDeLocalStorage("TOKENKEY");
 		var token = tokenObj?.ToString();
 
 		if (!string.IsNullOrWhiteSpace(token))
 		{
+			// Si el token está presente, se agrega al encabezado de la solicitud
 			Http.DefaultRequestHeaders.Authorization =
 				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 		}
 
+		// DTO para la paginación
 		var paginacion = new PaginacionDTO
-			{
-				Pagina = pagina,
-				CantidadRegistros = 5
-			};
+		{
+			Pagina = pagina,
+			CantidadRegistros = 5  
+		};
 
+		// URL para obtener la lista de usuarios con paginación
 		var url = $"https://localhost:7123/api/usuarios?pagina={paginacion.Pagina}&cantidadRegistros={paginacion.CantidadRegistros}";
 
+		// Realizo la solicitud a la API
 		var respuesta = await Http.GetAsync(url);
 
 		if (respuesta.IsSuccessStatusCode)
 		{
+			// Si la respuesta es exitosa, obtengo el total de páginas desde los encabezados
 			if (respuesta.Headers.Contains("totalPaginas"))
 			{
 				paginasTotales = int.Parse(respuesta.Headers.GetValues("totalPaginas").FirstOrDefault()!);
 			}
 
-			Usuarios = await respuesta.Content.ReadFromJsonAsync<List<UsuarioDTO>>() ?? new List<UsuarioDTO>();  // Evita null
+			// Deserializo el contenido de la respuesta a la lista de usuarios
+			Usuarios = await respuesta.Content.ReadFromJsonAsync<List<UsuarioDTO>>() ?? new List<UsuarioDTO>(); 
 		}
 		else
 		{
+			// Si la respuesta no es exitosa, muestro un mensaje de error
 			var error = await respuesta.Content.ReadAsStringAsync();
 			await Swal.FireAsync("Error", error, SweetAlertIcon.Error);
 		}

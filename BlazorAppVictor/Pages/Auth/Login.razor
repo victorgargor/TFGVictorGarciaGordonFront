@@ -20,7 +20,6 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
 
-        /* Título */
         .registro-card h3 {
             font-size: 1.75rem;
             font-weight: 600;
@@ -112,18 +111,21 @@
         </div>
         <ValidationMessage For="@(() => userInfo.Password)" class="validation-message" />
 
-        <!-- Botón -->
         <button type="submit" class="btn-registro">Iniciar sesión</button>
     </EditForm>
 </div>
 
 @code {
+    // Modelo que contiene los datos del usuario para el login
     private UserInfoDTO userInfo = new UserInfoDTO();
 
+    // Método que se ejecuta al enviar el formulario correctamente validado
     private async Task LoguearUsuario()
     {
+        // Envio los datos al endpoint de login
         var response = await Http.PostAsJsonAsync("https://localhost:7123/api/cuentas/login", userInfo);
 
+        // Si la respuesta no fue exitosa, muestro un mensaje de error
         if (!response.IsSuccessStatusCode)
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
@@ -131,8 +133,13 @@
         }
         else
         {
+            // Si la respuesta fue exitosa, leo el token
             var userToken = await response.Content.ReadFromJsonAsync<UserTokenDTO>();
+
+            // Guardo el token e inicio sesión
             await loginService.Login(userToken.Token);
+
+            // Redirijo al usuario a la página principal
             Navegador.NavigateTo("/");
         }
     }

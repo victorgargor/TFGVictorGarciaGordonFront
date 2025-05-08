@@ -7,25 +7,31 @@
 
 @if (claims == null)
 {
+    // Si no se han cargado los claims, muestro un mensaje de carga
     <p>Cargando claims...</p>
 }
 else
 {
+    // Si los claims ya están disponibles, muestro todos los claims
     <h4>Todos los claims</h4>
     <ul>
         @foreach (var claim in claims)
         {
+            // Listo todos los claims (Tipo y Valor)
             <li>@claim.Type: @claim.Value</li>
         }
     </ul>
 
+    // Filtro y muestro solo los permisos, aquellos claims con Type == "permiso"
     <h4>Permisos (claim.Type == "permiso")</h4>
     @if (permisos.Count == 0)
     {
+        // Si no hay permisos, muestro un mensaje 
         <p>No tienes permisos</p>
     }
     else
     {
+        // Si hay permisos, se listan
         <ul>
             @foreach (var permiso in permisos)
             {
@@ -34,30 +40,41 @@ else
         </ul>
     }
 
+    // Muestro la fecha de expiración del token
     <h4>Expiración del token</h4>
     <p>@expDate</p>
 }
 
 @code {
+    // Lista que contendrá todos los claims del token
     private List<Claim> claims;
+
+    // Lista para almacenar los permisos extraídos de los claims
     private List<string> permisos = new();
+
+    // Variable para almacenar la fecha de expiración del token
     private string expDate;
 
+    // Método que se ejecuta cuando el componente se inicializa
     protected override async Task OnInitializedAsync()
     {
+        // Obtengo todos los claims desde el token
         claims = await TokenService.ObtenerClaimsDesdeToken()
                  ?? new List<Claim>();
 
-        // 1) Extraer permisos: todos los claims con Type == "permiso"
+        // Filtro los claims para obtener solo los que son permisos (Type == "permiso")
         permisos = claims
             .Where(c => c.Type == "permiso")
             .Select(c => c.Value)
             .ToList();
 
-        // 2) Extraer exp (fecha de expiración). El type del claim es literalmente "exp"
+        // Busco el claim con el tipo "exp" para obtener la fecha de expiración
         var expClaim = claims.FirstOrDefault(c => c.Type == "exp");
+
+        // Si lo encuentro, lo convierto en una fecha legible
         if (expClaim != null && long.TryParse(expClaim.Value, out var ts))
         {
+            // Convierto el timestamp Unix a una fecha y hora legibles
             expDate = DateTimeOffset
                 .FromUnixTimeSeconds(ts)
                 .ToString("yyyy-MM-dd HH:mm:ss");
